@@ -1,168 +1,256 @@
-# CCPHYS2L - Electromagnetism Problem Solver
+# Electrostatics Calculator
 
-A Python-based GUI application for solving common electromagnetism problems, designed for physics students and educators.
+A comprehensive Python application for visualizing and calculating electrostatic properties on a 2D Cartesian plane. This interactive tool allows users to place charged particles and perform various electrostatics calculations including electric fields, potentials, forces, and more.
 
 ## Features
 
-- **Interactive GUI**: User-friendly interface built with Tkinter
-- **Multiple Problem Types**: 
-  - Coulomb's Law (Electrostatic Force)
-  - Electric Field calculations
-  - Electric Potential
-  - Capacitance
-  - Magnetic Force
-- **Dynamic Variable Input**: Add/remove variables as needed
-- **Real-time Problem Solving**: Instant calculations with proper error handling
+### Interactive 2D Cartesian Plane
 
-## Screenshots
+- Visual grid-based coordinate system
+- Real-time particle placement with mouse clicks
+- Color-coded particles (red for positive, blue for negative)
+- Coordinate conversion between screen and mathematical coordinates
 
-*GUI interface showing problem type selection and variable inputs*
+### Particle Management
+
+- Add positive particles (protons) - displayed as red circles
+- Add negative particles (electrons) - displayed as blue circles
+- Custom charge values for each particle
+- Visual charge labels on each particle
+- Clear all particles functionality
+
+### Comprehensive Calculations
+
+1. **Electric Field at a Point** - Calculate field components, magnitude, and direction
+2. **Electric Potential at a Point** - Find potential at any specified location
+3. **Force on a Charge** - Calculate force on a test charge at any point
+4. **Potential Energy of the System** - Total electrostatic potential energy
+5. **Electric Flux** - Through a specified Gaussian surface (circular)
+6. **Gauss's Law** - Application using flux calculations
+7. **Dipole Moment** - Electric dipole moment of the entire system
 
 ## Installation
 
 ### Prerequisites
 
-- Python 3.7 or higher
-- pip package manager
+- Python 3.12.3 or higher
+- pip (Python package installer)
 
 ### Setup
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/yourusername/CCPHYS2L.git
-   cd CCPHYS2L
-   ```
+1. Clone or download this repository
+2. Navigate to the project directory
+3. Install required dependencies:
 
-2. **Create a virtual environment**
-   ```bash
-   python -m venv venv
-   ```
-
-3. **Activate the virtual environment**
-   
-   On Windows:
-   ```bash
-   venv\Scripts\activate
-   ```
-   
-   On macOS/Linux:
-   ```bash
-   source venv/bin/activate
-   ```
-
-4. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-## Usage
-
-1. **Run the application**
-   ```bash
-   python electromagnetism-problem-solver.py
-   ```
-
-2. **Using the solver**:
-   - Select a problem type from the dropdown menu
-   - Add variables by clicking "Add Variable"
-   - Enter known values in the input fields
-   - Click "Solve Problem" to get the solution
-   - Use the "X" button to remove unwanted variable rows
-
-## Supported Problem Types
-
-### Coulomb's Law
-Calculate electrostatic force between two point charges:
-- **Formula**: F = k(q₁q₂)/r²
-- **Variables**: Force, Charge1, Charge2, Distance, Coulomb Constant
-
-### Electric Field
-Calculate electric field strength:
-- **Formula**: E = F/q
-- **Variables**: Electric Field, Force, Charge, Distance
-
-### Electric Potential
-Calculate electric potential:
-- **Formula**: V = W/q
-- **Variables**: Potential, Work, Charge
-
-### Capacitance
-Calculate capacitance:
-- **Formula**: C = Q/V
-- **Variables**: Capacitance, Charge, Voltage
-
-### Magnetic Force
-Calculate magnetic force on a moving charge:
-- **Formula**: F = qvB
-- **Variables**: Magnetic Force, Charge, Velocity, Magnetic Field
-
-## Examples
-
-### Example 1: Coulomb's Law
-To find the force between two charges:
-1. Select "Coulomb's Law (Electrostatic Force)"
-2. Add variables: Charge1 = 1e-6, Charge2 = 2e-6, Distance = 0.1
-3. Click "Solve Problem"
-4. Result: Force in Newtons
-
-### Example 2: Electric Field
-To find electric field strength:
-1. Select "Electric Field"
-2. Add variables: Force = 0.001, Charge = 1e-6
-3. Click "Solve Problem"
-4. Result: Electric Field in N/C
-
-## Development
-
-### Project Structure
-```
-CCPHYS2L/
-├── electromagnetism-problem-solver.py    # Main application file
-├── requirements.txt                      # Python dependencies
-├── README.md                            # Project documentation
-├── .gitignore                          # Git ignore rules
-└── LICENSE                             # Project license
+```bash
+pip install -r requirements.txt
 ```
 
-### Contributing
+### Running the Application
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/new-feature`)
-3. Commit your changes (`git commit -am 'Add new feature'`)
-4. Push to the branch (`git push origin feature/new-feature`)
-5. Create a Pull Request
+```bash
+python electrostatics_calculator.py
+```
 
-### Future Enhancements
+## Usage Guide
 
-- [ ] Add more problem types (Gauss's Law, Electromagnetic Induction)
-- [ ] Implement unit conversion
-- [ ] Add step-by-step solution explanations
-- [ ] Include visual diagrams
-- [ ] Support for vector calculations
-- [ ] Add problem history and save/load functionality
+### Getting Started
 
-## Requirements
+1. **Launch the application** - Run the Python script
+2. **Add particles** - Click either "Add Positive Particle" or "Add Negative Particle"
+3. **Place particles** - Click anywhere on the Cartesian plane to place a particle
+4. **Set charge** - Enter the charge value when prompted
+5. **Repeat** - Add as many particles as needed
+6. **Calculate** - Click the "Calculate" button to access computation options
+
+### Particle Placement
+
+- **Positive Particles**: Click "Add Positive Particle" → Click on plane → Enter charge
+- **Negative Particles**: Click "Add Negative Particle" → Click on plane → Enter charge
+- **Coordinates**: Based on the visual grid where each square represents one unit
+- **Charge Values**: Can be any positive number (sign is determined by particle type)
+
+### Calculations
+
+#### Electric Field at a Point
+
+- Calculates the electric field vector at any specified point
+- Shows X and Y components, magnitude, and direction angle
+- Uses superposition principle for multiple charges
+
+#### Electric Potential at a Point
+
+- Finds the electric potential (voltage) at any point
+- Accounts for all particles in the system
+- Results in volts (V)
+
+#### Force on a Charge
+
+- Calculates force on a test charge placed at any point
+- Shows force components, magnitude, and direction
+- Requires input of test charge value and position
+
+#### Potential Energy of the System
+
+- Calculates total electrostatic potential energy
+- Considers all pairwise interactions between particles
+- Requires at least 2 particles
+
+#### Electric Flux
+
+- Calculates flux through a circular Gaussian surface
+- Requires center coordinates and radius
+- Shows enclosed charge and resulting flux
+
+#### Gauss's Law
+
+- Demonstrates Gauss's law using flux calculations
+- ∮ E⋅dA = Q_enclosed/ε₀
+
+#### Dipole Moment
+
+- Calculates electric dipole moment of the system
+- Shows vector components and magnitude
+- Indicates if system has net charge
+
+### Navigation
+
+After each calculation, you have three options:
+
+- **Back to Plane**: Return to the main interface
+- **Back to Calculations**: Return to the calculation menu
+- **Close Program**: Exit the application
+
+## Technical Details
+
+### Physics Constants
+
+- Coulomb's constant (k): 8.99 × 10⁹ N⋅m²/C²
+- Permittivity of free space (ε₀): 8.854 × 10⁻¹² F/m
+
+### Coordinate System
+
+- Origin (0,0) at the center of the canvas
+- X-axis increases to the right
+- Y-axis increases upward (standard mathematical convention)
+- Grid scale: 20 pixels per unit
+
+### Error Handling
+
+- Prevents division by zero when points coincide with particles
+- Input validation for all user entries
+- Graceful handling of calculation errors
+
+## File Structure
+
+```
+electrostatics-calculator/
+│
+├── electrostatics_calculator.py    # Main application file
+├── requirements.txt                # Python dependencies
+└── README.md                      # This file
+```
+
+## Dependencies
+
+### Required Packages
+
+- **numpy**: For mathematical calculations and array operations
+- **tkinter**: For GUI interface (usually included with Python)
+
+### Standard Library Modules Used
+
+- `math`: Mathematical functions
+- `messagebox`: Dialog boxes
+- `simpledialog`: Input dialogs
+
+## System Requirements
+
+### Minimum Requirements
 
 - Python 3.7+
-- tkinter (usually included with Python)
-- math (standard library)
+- 4 GB RAM
+- 100 MB free disk space
+- Display resolution: 1024x768 or higher
+
+### Recommended Requirements
+
+- Python 3.9+
+- 8 GB RAM
+- Display resolution: 1920x1080 or higher
+
+## Troubleshooting
+
+### Common Issues
+
+**ImportError: No module named 'tkinter'**
+
+- On Linux: `sudo apt-get install python3-tk`
+- On macOS: tkinter should be included with Python
+- On Windows: Reinstall Python with tkinter option checked
+
+**Application window is too small**
+
+- The window is resizable - drag the corners to expand
+- Minimum recommended resolution: 1024x768
+
+**Calculations seem incorrect**
+
+- Verify particle placement coordinates
+- Check charge values and signs
+- Ensure proper unit consistency
+
+**Performance issues with many particles**
+
+- Recommended maximum: 50-100 particles
+- Use "Clear All" to reset and start fresh
+
+## Educational Applications
+
+This tool is ideal for:
+
+- **Physics Education**: Visualizing electrostatic concepts
+- **Student Learning**: Interactive exploration of electric fields
+- **Problem Solving**: Verification of analytical calculations
+- **Demonstrations**: Classroom presentations of electrostatics
+
+## Contributing
+
+### Bug Reports
+
+If you encounter any bugs or issues, please provide:
+
+- Python version
+- Operating system
+- Steps to reproduce the issue
+- Error messages (if any)
+
+### Feature Requests
+
+Suggestions for new features are welcome, particularly:
+
+- Additional calculation types
+- Enhanced visualization options
+- Export/import functionality
+- 3D visualization capabilities
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is open source and available under the MIT License.
 
-## Contact
+## Version History
 
-- **Author**: [Your Name]
-- **Email**: [your.email@example.com]
-- **GitHub**: [yourusername]
+- **v1.0**: Initial release with basic functionality
+  - Particle placement and visualization
+  - Seven calculation types
+  - Interactive GUI interface
 
 ## Acknowledgments
 
-- Physics formulas and constants from standard electromagnetism textbooks
-- Built with Python's tkinter for cross-platform GUI support
-- Designed for educational purposes in physics courses
+- Built using Python's tkinter for cross-platform compatibility
+- Physics calculations based on standard electrostatics formulas
+- Designed for educational and research applications
 
----
+## Contact
 
-*This application is part of the CCPHYS2L (College Physics 2 Laboratory) coursework.*
+For questions, suggestions, or support, please refer to the project documentation or create an issue in the project repository.
