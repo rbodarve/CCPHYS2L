@@ -144,9 +144,9 @@ After each calculation, you have three options:
 ## File Structure
 
 ```
-electrostatics-calculator/
+CCPHYS2L/
 │
-├── electrostatics_calculator.py    # Main application file
+├── electromagnetism.py    # Main application file
 ├── requirements.txt                # Python dependencies
 └── README.md                      # This file
 ```
