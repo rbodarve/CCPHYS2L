@@ -311,7 +311,7 @@ class ElectrostaticsCalculator:
         if point_x is None or point_y is None:
             return "Calculation cancelled."
 
-        E_x, E_y = 0, 0
+        e_x, e_y = 0, 0
 
         for particle in self.particles:
             dx = point_x - particle.x
@@ -322,20 +322,20 @@ class ElectrostaticsCalculator:
                 return "Error: Point coincides with a particle!"
 
             # Electric field magnitude
-            E_mag = self.k * particle.charge * particle.sign / (r**2)
+            e_mag = self.k * particle.charge * particle.sign / (r**2)
 
             # Components
-            E_x += E_mag * (dx / r)
-            E_y += E_mag * (dy / r)
+            e_x += e_mag * (dx / r)
+            e_y += e_mag * (dy / r)
 
-        E_total = math.sqrt(E_x**2 + E_y**2)
-        angle = math.degrees(math.atan2(E_y, E_x))
+        e_total = math.sqrt(e_x**2 + e_y**2)
+        angle = math.degrees(math.atan2(e_y, e_x))
 
         return (
             f"Electric Field at ({point_x}, {point_y}):\n\n"
-            f"Ex = {E_x:.2e} N/C\n"
-            f"Ey = {E_y:.2e} N/C\n"
-            f"Magnitude = {E_total:.2e} N/C\n"
+            f"Ex = {e_x:.2e} N/C\n"
+            f"Ey = {e_y:.2e} N/C\n"
+            f"Magnitude = {e_total:.2e} N/C\n"
             f"Direction = {angle:.1f}° from +x axis"
         )
 
@@ -346,7 +346,7 @@ class ElectrostaticsCalculator:
         if point_x is None or point_y is None:
             return "Calculation cancelled."
 
-        V = 0
+        v = 0
 
         for particle in self.particles:
             dx = point_x - particle.x
@@ -356,9 +356,9 @@ class ElectrostaticsCalculator:
             if r == 0:
                 return "Error: Point coincides with a particle!"
 
-            V += self.k * particle.charge * particle.sign / r
+            v += self.k * particle.charge * particle.sign / r
 
-        return f"Electric Potential at ({point_x}, {point_y}):\n\n" f"V = {V:.2e} V"
+        return f"Electric Potential at ({point_x}, {point_y}):\n\n" f"V = {v:.2e} V"
 
     def calc_force_on_charge(self):
         test_charge = simpledialog.askfloat("Input", "Enter test charge (C):")
@@ -368,7 +368,7 @@ class ElectrostaticsCalculator:
         if None in [test_charge, point_x, point_y]:
             return "Calculation cancelled."
 
-        F_x, F_y = 0, 0
+        f_x, f_y = 0, 0
 
         for particle in self.particles:
             dx = point_x - particle.x
@@ -379,20 +379,20 @@ class ElectrostaticsCalculator:
                 return "Error: Test charge coincides with a particle!"
 
             # Force magnitude
-            F_mag = self.k * test_charge * particle.charge * particle.sign / (r**2)
+            f_mag = self.k * test_charge * particle.charge * particle.sign / (r**2)
 
             # Components
-            F_x += F_mag * (dx / r)
-            F_y += F_mag * (dy / r)
+            f_x += f_mag * (dx / r)
+            f_y += f_mag * (dy / r)
 
-        F_total = math.sqrt(F_x**2 + F_y**2)
-        angle = math.degrees(math.atan2(F_y, F_x))
+        f_total = math.sqrt(f_x**2 + f_y**2)
+        angle = math.degrees(math.atan2(f_y, f_x))
 
         return (
             f"Force on charge {test_charge} C at ({point_x}, {point_y}):\n\n"
-            f"Fx = {F_x:.2e} N\n"
-            f"Fy = {F_y:.2e} N\n"
-            f"Magnitude = {F_total:.2e} N\n"
+            f"Fx = {f_x:.2e} N\n"
+            f"Fy = {f_y:.2e} N\n"
+            f"Magnitude = {f_total:.2e} N\n"
             f"Direction = {angle:.1f}° from +x axis"
         )
 
@@ -400,7 +400,7 @@ class ElectrostaticsCalculator:
         if len(self.particles) < 2:
             return "Need at least 2 particles to calculate potential energy!"
 
-        U = 0
+        u = 0
 
         for i in range(len(self.particles)):
             for j in range(i + 1, len(self.particles)):
@@ -409,9 +409,9 @@ class ElectrostaticsCalculator:
                 dy = p2.y - p1.y
                 r = math.sqrt(dx**2 + dy**2)
 
-                U += self.k * (p1.charge * p1.sign) * (p2.charge * p2.sign) / r
+                u += self.k * (p1.charge * p1.sign) * (p2.charge * p2.sign) / r
 
-        return f"Potential Energy of the System:\n\n" f"U = {U:.2e} J"
+        return f"Potential Energy of the System:\n\n" f"U = {u:.2e} J"
 
     def calc_electric_flux(self):
         radius = simpledialog.askfloat("Input", "Enter radius of Gaussian surface:")
