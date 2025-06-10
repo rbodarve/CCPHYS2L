@@ -1,18 +1,48 @@
+"""
+This program provides a graphical user interface (GUI) using tkinter.
+It allows the user to interact with various elements and visualize results.
+
+"""
+
 import tkinter as tk
 from tkinter import messagebox, simpledialog
+import itertools
 import math
 
 
 class Particle:
+    """
+    A class to represent a charged particle.
+
+    Attributes:
+        x (float): The x-coordinate of the particle.
+        y (float): The y-coordinate of the particle.
+        charge (float): The charge of the particle.
+        sign (int): The sign of the particle's charge (1 for positive, -1 for negative).
+        particle_type (str): Type of the particle (e.g., "electron", "proton").
+
+    Methods:
+        __init__(self, x, y, charge, sign, particle_type):
+            Initializes a new Particle instance with the given attributes.
+    """
+
     def __init__(self, x, y, charge, particle_type):
         self.x = x
         self.y = y
-        self.charge = charge  # in Coulombs or elementary charges
-        self.particle_type = particle_type  # 'proton' or 'electron'
+        self.charge = charge
+        self.particle_type = particle_type
         self.sign = 1 if particle_type == "proton" else -1
 
 
 class ElectrostaticsCalculator:
+    """
+    A class to represent the GUI of the application.
+
+    Methods:
+        __init__(self, x, y, charge, sign, particle_type):
+            Initializes a new Particle instance with the given attributes.
+    """
+
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("Electrostatics Calculator")
@@ -228,7 +258,8 @@ class ElectrostaticsCalculator:
             sign = "+" if p.particle_type == "proton" else "-"
             particles_text.insert(
                 tk.END,
-                f"Particle {i+1}: {p.particle_type.capitalize()} at ({p.x:.2f}, {p.y:.2f}), Charge: {sign}{p.charge}\n",
+                f"Particle {i+1}: {p.particle_type.capitalize()} at "
+                f"({p.x:.2f}, {p.y:.2f}), Charge: {sign}{p.charge}\n",
             )
         particles_text.config(state=tk.DISABLED)
 
@@ -402,14 +433,13 @@ class ElectrostaticsCalculator:
 
         u = 0
 
-        for i in range(len(self.particles)):
-            for j in range(i + 1, len(self.particles)):
-                p1, p2 = self.particles[i], self.particles[j]
-                dx = p2.x - p1.x
-                dy = p2.y - p1.y
-                r = math.sqrt(dx**2 + dy**2)
-
-                u += self.k * (p1.charge * p1.sign) * (p2.charge * p2.sign) / r
+        for p1, p2 in itertools.combinations(
+            self.particles, 2
+        ):  # Automatically gives you pairs
+            dx = p2.x - p1.x
+            dy = p2.y - p1.y
+            r = math.sqrt(dx**2 + dy**2)
+            u += self.k * (p1.charge * p1.sign) * (p2.charge * p2.sign) / r
 
         return f"Potential Energy of the System:\n\n" f"U = {u:.2e} J"
 
