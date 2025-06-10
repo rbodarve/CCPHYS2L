@@ -37,10 +37,6 @@ class Particle:
 class ElectrostaticsCalculator:
     """
     A class to represent the GUI of the application.
-
-    Methods:
-        __init__(self, x, y, charge, sign, particle_type):
-            Initializes a new Particle instance with the given attributes.
     """
 
     def __init__(self):
@@ -60,6 +56,9 @@ class ElectrostaticsCalculator:
         self.setup_main_interface()
 
     def setup_main_interface(self):
+        """
+        Set up the main interface of the application with buttons and canvas.
+        """
         # Main frame
         main_frame = tk.Frame(self.root)
         main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -172,16 +171,26 @@ class ElectrostaticsCalculator:
         return canvas_x, canvas_y
 
     def toggle_proton_mode(self):
+        """
+        Switch to add proton mode
+        """
+
         self.current_mode = "add_proton"
         self.status_label.config(text="Click on the plane to place a positive particle")
         self.canvas.config(cursor="crosshair")
 
     def toggle_electron_mode(self):
+        """
+        Switch to add electron mode
+        """
         self.current_mode = "add_electron"
         self.status_label.config(text="Click on the plane to place a negative particle")
         self.canvas.config(cursor="crosshair")
 
     def canvas_click(self, event):
+        """
+        Handle canvas click events to add particles
+        """
         if self.current_mode in ["add_proton", "add_electron"]:
             x, y = self.canvas_to_coords(event.x, event.y)
 
@@ -207,6 +216,9 @@ class ElectrostaticsCalculator:
             )
 
     def draw_particle(self, particle):
+        """
+        Draw a particle on the canvas based on its coordinates and type
+        """
         canvas_x, canvas_y = self.coords_to_canvas(particle.x, particle.y)
         color = "blue" if particle.particle_type == "proton" else "red"
 
@@ -231,12 +243,18 @@ class ElectrostaticsCalculator:
         )
 
     def clear_all(self):
+        """
+        Clear all particles and reset the canvas
+        """
         self.particles = []
         self.canvas.delete("all")
         self.draw_grid()
         self.status_label.config(text="All particles cleared")
 
     def open_calculation_window(self):
+        """
+        Open a new window for calculations
+        """
         if not self.particles:
             messagebox.showwarning("No Particles", "Please add some particles first!")
             return
@@ -299,6 +317,9 @@ class ElectrostaticsCalculator:
         )
 
     def perform_calculation(self, calc_function, parent_window):
+        """
+        Perform the selected calculation and display the result in a new window.
+        """
         try:
             result = calc_function()
             self.show_result(result, parent_window)
@@ -306,6 +327,9 @@ class ElectrostaticsCalculator:
             messagebox.showerror("Calculation Error", f"Error in calculation: {str(e)}")
 
     def show_result(self, result, parent_window):
+        """
+        Display the calculation result in a new window.
+        """
         result_window = tk.Toplevel(parent_window)
         result_window.title("Calculation Result")
         result_window.geometry("500x400")
@@ -336,6 +360,9 @@ class ElectrostaticsCalculator:
         )
 
     def calc_electric_field(self):
+        """
+        Calculate the electric field at a point specified by the user.
+        """
         point_x = simpledialog.askfloat("Input", "Enter X coordinate of the point:")
         point_y = simpledialog.askfloat("Input", "Enter Y coordinate of the point:")
 
@@ -371,6 +398,9 @@ class ElectrostaticsCalculator:
         )
 
     def calc_electric_potential(self):
+        """
+        Calculate the electric potential at a point specified by the user.
+        """
         point_x = simpledialog.askfloat("Input", "Enter X coordinate of the point:")
         point_y = simpledialog.askfloat("Input", "Enter Y coordinate of the point:")
 
@@ -392,6 +422,7 @@ class ElectrostaticsCalculator:
         return f"Electric Potential at ({point_x}, {point_y}):\n\n" f"V = {v:.2e} V"
 
     def calc_force_on_charge(self):
+        """Calculate the force on a test charge at a specified point."""
         test_charge = simpledialog.askfloat("Input", "Enter test charge (C):")
         point_x = simpledialog.askfloat("Input", "Enter X coordinate of test charge:")
         point_y = simpledialog.askfloat("Input", "Enter Y coordinate of test charge:")
@@ -428,6 +459,7 @@ class ElectrostaticsCalculator:
         )
 
     def calc_potential_energy(self):
+        """Calculate the potential energy of the system of particles."""
         if len(self.particles) < 2:
             return "Need at least 2 particles to calculate potential energy!"
 
@@ -444,6 +476,7 @@ class ElectrostaticsCalculator:
         return f"Potential Energy of the System:\n\n" f"U = {u:.2e} J"
 
     def calc_electric_flux(self):
+        """Calculate the electric flux through a Gaussian surface."""
         radius = simpledialog.askfloat("Input", "Enter radius of Gaussian surface:")
         center_x = simpledialog.askfloat("Input", "Enter X coordinate of center:")
         center_y = simpledialog.askfloat("Input", "Enter Y coordinate of center:")
@@ -472,12 +505,14 @@ class ElectrostaticsCalculator:
         )
 
     def calc_gauss_law(self):
+        """Calculate electric flux using Gauss's Law."""
         return (
             self.calc_electric_flux() + "\n\nGauss's Law: ∮ E⋅dA = Q_enclosed/ε₀\n"
             "This calculation uses Gauss's law to find the electric flux."
         )
 
     def calc_dipole_moment(self):
+        """Calculate the electric dipole moment of the system."""
         if len(self.particles) < 2:
             return "Need at least 2 particles to calculate dipole moment!"
 
@@ -508,6 +543,7 @@ class ElectrostaticsCalculator:
         )
 
     def run(self):
+        """Run the main application loop."""
         # Ensure proper grid drawing after window is displayed
         self.root.after(100, self.draw_grid)
         self.root.mainloop()
