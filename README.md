@@ -49,7 +49,7 @@ pip install -r requirements.txt
 ### Running the Application
 
 ```bash
-python electrostatics_calculator.py
+python electromagnetism.py
 ```
 
 ## Usage Guide
@@ -187,26 +187,6 @@ This tool is ideal for:
 - **Student Learning**: Interactive exploration of electric fields
 - **Problem Solving**: Verification of analytical calculations
 - **Demonstrations**: Classroom presentations of electrostatics
-
-## Contributing
-
-### Bug Reports
-
-If you encounter any bugs or issues, please provide:
-
-- Python version
-- Operating system
-- Steps to reproduce the issue
-- Error messages (if any)
-
-### Feature Requests
-
-Suggestions for new features are welcome, particularly:
-
-- Additional calculation types
-- Enhanced visualization options
-- Export/import functionality
-- 3D visualization capabilities
 
 ## License
 
