@@ -8,13 +8,13 @@ A comprehensive Python application for visualizing and calculating electrostatic
 
 - Visual grid-based coordinate system
 - Real-time particle placement with mouse clicks
-- Color-coded particles (vlue for positive, red for negative)
+- Color-coded particles (blue for positive, red for negative)
 - Coordinate conversion between screen and mathematical coordinates
 
 ### Particle Management
 
-- Add positive particles (protons) - displayed as red circles
-- Add negative particles (electrons) - displayed as blue circles
+- Add positive particles (protons) - displayed as blue circles
+- Add negative particles (electrons) - displayed as red circles
 - Custom charge values for each particle
 - Visual charge labels on each particle
 - Clear all particles functionality
@@ -179,32 +179,6 @@ electrostatics-calculator/
 - 8 GB RAM
 - Display resolution: 1920x1080 or higher
 
-## Troubleshooting
-
-### Common Issues
-
-**ImportError: No module named 'tkinter'**
-
-- On Linux: `sudo apt-get install python3-tk`
-- On macOS: tkinter should be included with Python
-- On Windows: Reinstall Python with tkinter option checked
-
-**Application window is too small**
-
-- The window is resizable - drag the corners to expand
-- Minimum recommended resolution: 1024x768
-
-**Calculations seem incorrect**
-
-- Verify particle placement coordinates
-- Check charge values and signs
-- Ensure proper unit consistency
-
-**Performance issues with many particles**
-
-- Recommended maximum: 50-100 particles
-- Use "Clear All" to reset and start fresh
-
 ## Educational Applications
 
 This tool is ideal for:
@@ -238,19 +212,8 @@ Suggestions for new features are welcome, particularly:
 
 This project is open source and available under the MIT License.
 
-## Version History
-
-- **v1.0**: Initial release with basic functionality
-  - Particle placement and visualization
-  - Seven calculation types
-  - Interactive GUI interface
-
 ## Acknowledgments
 
 - Built using Python's tkinter for cross-platform compatibility
 - Physics calculations based on standard electrostatics formulas
 - Designed for educational and research applications
-
-## Contact
-
-For questions, suggestions, or support, please refer to the project documentation or create an issue in the project repository.

@@ -1,7 +1,6 @@
 import tkinter as tk
-from tkinter import ttk, messagebox, simpledialog
+from tkinter import messagebox, simpledialog
 import math
-import numpy as np
 
 
 class Particle:
@@ -272,7 +271,7 @@ class ElectrostaticsCalculator:
         try:
             result = calc_function()
             self.show_result(result, parent_window)
-        except Exception as e:
+        except (tk.TclError, ValueError) as e:
             messagebox.showerror("Calculation Error", f"Error in calculation: {str(e)}")
 
     def show_result(self, result, parent_window):
