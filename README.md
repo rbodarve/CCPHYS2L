@@ -8,7 +8,7 @@ A comprehensive Python application for visualizing and calculating electrostatic
 
 - Visual grid-based coordinate system
 - Real-time particle placement with mouse clicks
-- Color-coded particles (red for positive, blue for negative)
+- Color-coded particles (vlue for positive, red for negative)
 - Coordinate conversion between screen and mathematical coordinates
 
 ### Particle Management

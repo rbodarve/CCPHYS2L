@@ -44,7 +44,7 @@ class ElectrostaticsCalculator:
             button_frame,
             text="Add Positive Particle",
             command=self.toggle_proton_mode,
-            bg="red",
+            bg="blue",
             fg="white",
         )
         self.add_proton_btn.pack(side=tk.LEFT, padx=5)
@@ -53,7 +53,7 @@ class ElectrostaticsCalculator:
             button_frame,
             text="Add Negative Particle",
             command=self.toggle_electron_mode,
-            bg="blue",
+            bg="red",
             fg="white",
         )
         self.add_electron_btn.pack(side=tk.LEFT, padx=5)
@@ -179,7 +179,7 @@ class ElectrostaticsCalculator:
 
     def draw_particle(self, particle):
         canvas_x, canvas_y = self.coords_to_canvas(particle.x, particle.y)
-        color = "red" if particle.particle_type == "proton" else "blue"
+        color = "blue" if particle.particle_type == "proton" else "red"
 
         # Draw particle
         self.canvas.create_oval(
