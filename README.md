@@ -1,6 +1,6 @@
 # Electrostatics Calculator
 
-A comprehensive Python application for visualizing and calculating electrostatic properties on a 2D Cartesian plane. This interactive tool allows users to place charged particles and perform various electrostatics calculations including electric fields, potentials, forces, and more.
+A comprehensive Python application for visualizing and calculating electrostatic properties on a 2D Cartesian plane. This interactive tool allows users to place charged particles and perform various electrostatics calculations including electric fields, potentials, forces, and more. This is the final project for the course CCPHYS2L (College Physics 2) done by the following people: James Adrian Castro, Harley Galamiton, Renaire Odarve and Jude Renwell Prodigalidad.
 
 ## Features
 
