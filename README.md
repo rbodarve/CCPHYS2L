@@ -1,6 +1,17 @@
 # Electrostatics Calculator
 
-A comprehensive Python application for visualizing and calculating electrostatic properties on a 2D Cartesian plane. This interactive tool allows users to place charged particles and perform various electrostatics calculations including electric fields, potentials, forces, and more. This is the final project for the course CCPHYS2L (College Physics 2) done by the following people: James Adrian Castro, Harley Galamiton, Renaire Odarve and Jude Renwell Prodigalidad.
+**Final Project for Physics 2 Electromagnetism (CCPHYS2L)**
+
+A comprehensive Python application for visualizing and calculating electrostatic properties on a 2D Cartesian plane. This interactive tool allows users to place charged particles and perform various electrostatics calculations including electric fields, potentials, forces, and more.
+
+## Project Information
+
+**Course**: CCPHYS2L - College Physics 2 (Electromagnetism)  
+**Project Team**:
+- James Adrian Castro
+- Harley Galamiton
+- Renaire Odarve
+- Jude Renwell Prodigalidad
 
 ## Features
 
@@ -18,6 +29,9 @@ A comprehensive Python application for visualizing and calculating electrostatic
 - Custom charge values for each particle
 - Visual charge labels on each particle
 - Clear all particles functionality
+- **Save Configuration** - Save current particle setup to JSON file
+- **Load Configuration** - Load previously saved particle configurations
+- **Undo/Redo** - Undo and redo particle placement actions
 
 ### Comprehensive Calculations
 
@@ -33,18 +47,15 @@ A comprehensive Python application for visualizing and calculating electrostatic
 
 ### Prerequisites
 
-- Python 3.12.3 or higher
-- pip (Python package installer)
+- Python 3.7 or higher
+- tkinter (usually included with Python)
 
 ### Setup
 
 1. Clone or download this repository
 2. Navigate to the project directory
-3. Install required dependencies:
 
-```bash
-pip install -r requirements.txt
-```
+**Note**: No additional packages need to be installed. All dependencies are part of Python's standard library.
 
 ### Running the Application
 
@@ -69,6 +80,14 @@ python electromagnetism.py
 - **Negative Particles**: Click "Add Negative Particle" → Click on plane → Enter charge
 - **Coordinates**: Based on the visual grid where each square represents one unit
 - **Charge Values**: Can be any positive number (sign is determined by particle type)
+
+### Configuration Management
+
+- **Save Configuration**: Save your current particle setup to a JSON file for later use
+- **Load Configuration**: Load a previously saved particle configuration
+- **Undo**: Undo the last particle placement action
+- **Redo**: Redo a previously undone action
+- **Clear All**: Remove all particles from the plane
 
 ### Calculations
 
@@ -147,22 +166,26 @@ After each calculation, you have three options:
 CCPHYS2L/
 │
 ├── electromagnetism.py    # Main application file
-├── requirements.txt                # Python dependencies
-└── README.md                      # This file
+├── LICENSE.md            # MIT License
+└── README.md             # This file
 ```
 
 ## Dependencies
 
 ### Required Packages
 
-- **numpy**: For mathematical calculations and array operations
 - **tkinter**: For GUI interface (usually included with Python)
 
 ### Standard Library Modules Used
 
-- `math`: Mathematical functions
-- `messagebox`: Dialog boxes
-- `simpledialog`: Input dialogs
+- `math`: Mathematical functions and calculations
+- `tkinter.messagebox`: Dialog boxes for user notifications
+- `tkinter.simpledialog`: Input dialogs for user input
+- `tkinter.filedialog`: File save/load dialogs
+- `itertools`: For efficient iteration operations
+- `json`: For saving and loading particle configurations
+- `copy`: For deep copying objects
+- `datetime`: For timestamping saved files
 
 ## System Requirements
 
