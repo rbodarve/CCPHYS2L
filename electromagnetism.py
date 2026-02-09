@@ -1,8 +1,3 @@
-"""
-This program provides a graphical user interface (GUI) using tkinter.
-It allows the user to interact with various elements and visualize results.
-
-"""
 
 import tkinter as tk
 from tkinter import messagebox, simpledialog
@@ -61,6 +56,10 @@ class ElectrostaticsCalculator:
         # Physics constants
         self.k = 8.99e9  # Coulomb's constant in N⋅m²/C²
         self.epsilon_0 = 8.854e-12  # Permittivity of free space
+        
+        # Charge validation bounds
+        self.MIN_CHARGE = 1e-12  # Minimum charge in Coulombs (1 picocoulomb)
+        self.MAX_CHARGE = 1e-3   # Maximum charge in Coulombs (1 millicoulomb)
 
         self.particles = []
         self.current_mode = None  # 'add_proton', 'add_electron', or None
@@ -198,32 +197,87 @@ class ElectrostaticsCalculator:
         self.status_label.config(text="Click on the plane to place a negative particle")
         self.canvas.config(cursor="crosshair")
 
+    def validate_charge(self, charge, particle_type):
+        """
+        Validate charge value and return validated charge or None if invalid.
+        Shows appropriate error messages for invalid inputs.
+        """
+        if charge is None:
+            return None
+        
+        # Convert to absolute value
+        charge = abs(charge)
+        
+        # Check if charge is zero
+        if charge == 0:
+            messagebox.showerror(
+                "Invalid Charge",
+                "Charge cannot be zero. Please enter a non-zero value."
+            )
+            return None
+        
+        # Check minimum bound
+        if charge < self.MIN_CHARGE:
+            messagebox.showerror(
+                "Invalid Charge",
+                f"Charge is too small. Minimum allowed: {self.MIN_CHARGE:.2e} C\n"
+                f"You entered: {charge:.2e} C"
+            )
+            return None
+        
+        # Check maximum bound
+        if charge > self.MAX_CHARGE:
+            messagebox.showerror(
+                "Invalid Charge",
+                f"Charge is too large. Maximum allowed: {self.MAX_CHARGE:.2e} C\n"
+                f"You entered: {charge:.2e} C"
+            )
+            return None
+        
+        return charge
+
     def canvas_click(self, event):
         """
         Handle canvas click events to add particles
         """
         if self.current_mode in ["add_proton", "add_electron"]:
             x, y = self.canvas_to_coords(event.x, event.y)
+            
+            particle_type = "proton" if self.current_mode == "add_proton" else "electron"
+            sign_symbol = "+" if particle_type == "proton" else "-"
+            
+            # Show info about sign convention on first particle
+            if len(self.particles) == 0:
+                messagebox.showinfo(
+                    "Sign Convention",
+                    f"Note: You are adding a {particle_type}.\n\n"
+                    f"The sign ({sign_symbol}) is automatically determined by particle type.\n"
+                    f"Please enter only the magnitude (absolute value) of the charge.\n\n"
+                    f"Valid range: {self.MIN_CHARGE:.2e} C to {self.MAX_CHARGE:.2e} C"
+                )
 
             charge = simpledialog.askfloat(
                 "Charge Input",
-                f"Enter charge for {self.current_mode.split('_')[1]} at ({x:.1f}, {y:.1f}):",
-                initialvalue=1.0,
+                f"Enter charge magnitude for {particle_type} at ({x:.1f}, {y:.1f}):\n"
+                f"(Sign {sign_symbol} is automatic, enter positive value only)\n\n"
+                f"Range: {self.MIN_CHARGE:.2e} to {self.MAX_CHARGE:.2e} C",
+                initialvalue=1e-9,
+                minvalue=0,
             )
 
-            if charge is not None:
-                particle_type = (
-                    "proton" if self.current_mode == "add_proton" else "electron"
-                )
-                particle = Particle(x, y, abs(charge), particle_type)
+            # Validate the charge
+            validated_charge = self.validate_charge(charge, particle_type)
+            
+            if validated_charge is not None:
+                particle = Particle(x, y, validated_charge, particle_type)
                 self.particles.append(particle)
                 self.draw_particle(particle)
+                self.status_label.config(
+                    text=f"Particle added. Total particles: {len(self.particles)}"
+                )
 
             self.current_mode = None
             self.canvas.config(cursor="")
-            self.status_label.config(
-                text=f"Particle added. Total particles: {len(self.particles)}"
-            )
 
     def draw_particle(self, particle):
         """
@@ -329,16 +383,23 @@ class ElectrostaticsCalculator:
             return
         
         particle = self.selected_particle
+        sign_symbol = "+" if particle.particle_type == "proton" else "-"
         
         new_charge = simpledialog.askfloat(
             "Edit Charge",
-            f"Enter new charge for {particle.particle_type} at ({particle.x:.1f}, {particle.y:.1f}):\n"
-            f"Current charge: {particle.charge}",
+            f"Enter new charge magnitude for {particle.particle_type} at ({particle.x:.1f}, {particle.y:.1f}):\n"
+            f"Current charge: {particle.charge:.2e} C\n"
+            f"(Sign {sign_symbol} is automatic, enter positive value only)\n\n"
+            f"Range: {self.MIN_CHARGE:.2e} to {self.MAX_CHARGE:.2e} C",
             initialvalue=particle.charge,
+            minvalue=0,
         )
         
-        if new_charge is not None and new_charge != particle.charge:
-            particle.charge = abs(new_charge)
+        # Validate the new charge
+        validated_charge = self.validate_charge(new_charge, particle.particle_type)
+        
+        if validated_charge is not None and validated_charge != particle.charge:
+            particle.charge = validated_charge
             
             if particle.text_id:
                 self.canvas.delete(particle.text_id)
@@ -353,7 +414,7 @@ class ElectrostaticsCalculator:
                 tags="particle",
             )
             
-            self.status_label.config(text=f"Particle charge updated to {sign}{particle.charge}")
+            self.status_label.config(text=f"Particle charge updated to {sign}{particle.charge:.2e} C")
         
         self.selected_particle = None
 
