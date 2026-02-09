@@ -111,6 +111,11 @@ class ElectrostaticsCalculator:
             bg="white", relief=tk.SUNKEN, bd=2
         )
         self.canvas.pack(fill=tk.BOTH, expand=True)
+        
+        # Lock canvas size to prevent coordinate system issues on resize
+        self.canvas.pack_propagate(False)
+        self.canvas.config(width=self.CANVAS_WIDTH, height=self.CANVAS_HEIGHT)
+        
         self.canvas.bind("<Button-1>", self.canvas_click)
         self.canvas.bind("<Button-3>", self.canvas_right_click)  # Right-click
         self.canvas.bind("<Double-Button-1>", self.canvas_double_click)  # Double-click
@@ -134,8 +139,9 @@ class ElectrostaticsCalculator:
         """Draw cartesian coordinate system"""
         self.canvas.delete("grid")
 
-        width = self.canvas.winfo_width() or self.CANVAS_WIDTH
-        height = self.canvas.winfo_height() or self.CANVAS_HEIGHT
+        # Use fixed canvas dimensions
+        width = self.CANVAS_WIDTH
+        height = self.CANVAS_HEIGHT
 
         center_x, center_y = width // 2, height // 2
         self.canvas.create_line(
@@ -162,8 +168,9 @@ class ElectrostaticsCalculator:
 
     def canvas_to_coords(self, canvas_x, canvas_y):
         """Convert canvas coordinates to cartesian coordinates"""
-        width = self.canvas.winfo_width() or self.CANVAS_WIDTH
-        height = self.canvas.winfo_height() or self.CANVAS_HEIGHT
+        # Use fixed canvas dimensions
+        width = self.CANVAS_WIDTH
+        height = self.CANVAS_HEIGHT
         center_x, center_y = width // 2, height // 2
 
         x = (canvas_x - center_x) / self.GRID_SCALE
@@ -172,8 +179,9 @@ class ElectrostaticsCalculator:
 
     def coords_to_canvas(self, x, y):
         """Convert cartesian coordinates to canvas coordinates"""
-        width = self.canvas.winfo_width() or self.CANVAS_WIDTH
-        height = self.canvas.winfo_height() or self.CANVAS_HEIGHT
+        # Use fixed canvas dimensions
+        width = self.CANVAS_WIDTH
+        height = self.CANVAS_HEIGHT
         center_x, center_y = width // 2, height // 2
 
         canvas_x = center_x + x * self.GRID_SCALE
@@ -423,7 +431,15 @@ class ElectrostaticsCalculator:
         Open a new window for calculations
         """
         if not self.particles:
-            messagebox.showwarning("No Particles", "Please add some particles first!")
+            messagebox.showwarning(
+                "No Particles", 
+                "No particles have been added yet.\n\n"
+                "Recovery Steps:\n"
+                "1. Click 'Add Positive Particle' or 'Add Negative Particle'\n"
+                "2. Click on the plane to place the particle\n"
+                "3. Enter the charge magnitude when prompted\n\n"
+                "You need at least one particle to perform calculations."
+            )
             return
 
         calc_window = tk.Toplevel(self.root)
@@ -488,7 +504,16 @@ class ElectrostaticsCalculator:
             result = calc_function()
             self.show_result(result, parent_window)
         except (tk.TclError, ValueError) as e:
-            messagebox.showerror("Calculation Error", f"Error in calculation: {str(e)}")
+            error_msg = (
+                f"An error occurred during calculation:\n\n"
+                f"Error: {str(e)}\n\n"
+                f"Recovery Suggestions:\n"
+                f"• Ensure you entered valid numerical values\n"
+                f"• Check that coordinates don't coincide with particles\n"
+                f"• Try the calculation again with different values\n"
+                f"• If the problem persists, try clearing and re-adding particles"
+            )
+            messagebox.showerror("Calculation Error", error_msg)
 
     def show_result(self, result, parent_window):
         """
@@ -539,7 +564,14 @@ class ElectrostaticsCalculator:
             r = math.sqrt(dx**2 + dy**2)
 
             if r == 0:
-                return "Error: Point coincides with a particle!"
+                return (
+                    "Error: Test charge coincides with a particle!\n\n"
+                    "The test charge position is at the same location as a particle.\n"
+                    "Force calculation is undefined at this location.\n\n"
+                    "Recovery Suggestion:\n"
+                    "Choose a different position that doesn't overlap with any particle.\n"
+                    f"Particle is at: ({particle.x:.2f}, {particle.y:.2f})"
+                )
 
             e_mag = self.k * particle.charge * particle.sign / (r**2)
 
@@ -575,7 +607,14 @@ class ElectrostaticsCalculator:
             r = math.sqrt(dx**2 + dy**2)
 
             if r == 0:
-                return "Error: Point coincides with a particle!"
+                return (
+                    "Error: Point coincides with a particle!\n\n"
+                    "The selected point is at the same location as a particle.\n"
+                    "Electric potential is undefined at a point charge location.\n\n"
+                    "Recovery Suggestion:\n"
+                    "Choose a different point that doesn't overlap with any particle.\n"
+                    f"Particle is at: ({particle.x:.2f}, {particle.y:.2f})"
+                )
 
             v += self.k * particle.charge * particle.sign / r
 
@@ -598,7 +637,14 @@ class ElectrostaticsCalculator:
             r = math.sqrt(dx**2 + dy**2)
 
             if r == 0:
-                return "Error: Test charge coincides with a particle!"
+                return (
+                    "Error: Test charge coincides with a particle!\n\n"
+                    "The test charge position is at the same location as a particle.\n"
+                    "Force calculation is undefined at this location.\n\n"
+                    "Recovery Suggestion:\n"
+                    "Choose a different position that doesn't overlap with any particle.\n"
+                    f"Particle is at: ({particle.x:.2f}, {particle.y:.2f})"
+                )
 
             f_mag = self.k * test_charge * particle.charge * particle.sign / (r**2)
 
@@ -619,7 +665,14 @@ class ElectrostaticsCalculator:
     def calc_potential_energy(self):
         """Calculate the potential energy of the system of particles."""
         if len(self.particles) < 2:
-            return "Need at least 2 particles to calculate potential energy!"
+            return (
+                "Insufficient particles for potential energy calculation.\n\n"
+                "This calculation requires at least 2 particles.\n"
+                f"Current particle count: {len(self.particles)}\n\n"
+                "Recovery Steps:\n"
+                "1. Add more particles using the 'Add Positive/Negative Particle' buttons\n"
+                "2. Return to this calculation when you have 2 or more particles"
+            )
 
         u = 0
 
@@ -672,7 +725,14 @@ class ElectrostaticsCalculator:
     def calc_dipole_moment(self):
         """Calculate the electric dipole moment of the system."""
         if len(self.particles) < 2:
-            return "Need at least 2 particles to calculate dipole moment!"
+            return (
+                "Insufficient particles for dipole moment calculation.\n\n"
+                "This calculation requires at least 2 particles.\n"
+                f"Current particle count: {len(self.particles)}\n\n"
+                "Recovery Steps:\n"
+                "1. Add more particles using the 'Add Positive/Negative Particle' buttons\n"
+                "2. Return to this calculation when you have 2 or more particles"
+            )
 
         p_x, p_y = 0, 0
         total_charge = 0
