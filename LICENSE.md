@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2025 CCPHYS2L Project
+Copyright (c) 2025 James Adrian Castro, Harley Galamiton, Renaire Odarve, Jude Renwell Prodigalidad
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
