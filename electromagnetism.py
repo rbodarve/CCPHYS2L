@@ -62,26 +62,21 @@ class ElectrostaticsCalculator:
         self.k = 8.99e9  # Coulomb's constant in N⋅m²/C²
         self.epsilon_0 = 8.854e-12  # Permittivity of free space
 
-        # Data storage
         self.particles = []
         self.current_mode = None  # 'add_proton', 'add_electron', or None
 
-        # GUI setup
         self.setup_main_interface()
 
     def setup_main_interface(self):
         """
         Set up the main interface of the application with buttons and canvas.
         """
-        # Main frame
         main_frame = tk.Frame(self.root)
         main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        # Button frame
         button_frame = tk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=(0, 10))
 
-        # Buttons
         self.add_proton_btn = tk.Button(
             button_frame,
             text="Add Positive Particle",
@@ -109,11 +104,9 @@ class ElectrostaticsCalculator:
         )
         self.calculate_btn.pack(side=tk.LEFT, padx=5)
 
-        # Clear button
         clear_btn = tk.Button(button_frame, text="Clear All", command=self.clear_all)
         clear_btn.pack(side=tk.LEFT, padx=5)
 
-        # Canvas for cartesian plane
         self.canvas = tk.Canvas(
             main_frame, width=self.CANVAS_WIDTH, height=self.CANVAS_HEIGHT, 
             bg="white", relief=tk.SUNKEN, bd=2
@@ -123,13 +116,11 @@ class ElectrostaticsCalculator:
         self.canvas.bind("<Button-3>", self.canvas_right_click)  # Right-click
         self.canvas.bind("<Double-Button-1>", self.canvas_double_click)  # Double-click
 
-        # Context menu for particles
         self.context_menu = tk.Menu(self.root, tearoff=0)
         self.context_menu.add_command(label="Delete Particle", command=self.delete_selected_particle)
         self.context_menu.add_command(label="Edit Charge", command=self.edit_selected_particle)
         self.selected_particle = None
 
-        # Status label
         self.status_label = tk.Label(
             main_frame,
             text="Add particles | Right-click to delete | Double-click to edit charge",
@@ -147,7 +138,6 @@ class ElectrostaticsCalculator:
         width = self.canvas.winfo_width() or self.CANVAS_WIDTH
         height = self.canvas.winfo_height() or self.CANVAS_HEIGHT
 
-        # Center lines (axes)
         center_x, center_y = width // 2, height // 2
         self.canvas.create_line(
             0, center_y, width, center_y, fill="black", width=2, tags="grid"
@@ -156,13 +146,11 @@ class ElectrostaticsCalculator:
             center_x, 0, center_x, height, fill="black", width=2, tags="grid"
         )
 
-        # Grid lines
         for i in range(0, width, self.GRID_SPACING):
             self.canvas.create_line(i, 0, i, height, fill="lightgray", tags="grid")
         for i in range(0, height, self.GRID_SPACING):
             self.canvas.create_line(0, i, width, i, fill="lightgray", tags="grid")
 
-        # Labels
         self.canvas.create_text(
             width - 20, center_y - 20, text="X", font=("Arial", 12), tags="grid"
         )
@@ -217,7 +205,6 @@ class ElectrostaticsCalculator:
         if self.current_mode in ["add_proton", "add_electron"]:
             x, y = self.canvas_to_coords(event.x, event.y)
 
-            # Ask for charge
             charge = simpledialog.askfloat(
                 "Charge Input",
                 f"Enter charge for {self.current_mode.split('_')[1]} at ({x:.1f}, {y:.1f}):",
@@ -246,7 +233,6 @@ class ElectrostaticsCalculator:
         canvas_x, canvas_y = self.coords_to_canvas(particle.x, particle.y)
         color = "blue" if particle.particle_type == "proton" else "red"
 
-        # Draw particle and store ID
         particle.oval_id = self.canvas.create_oval(
             canvas_x - self.PARTICLE_RADIUS,
             canvas_y - self.PARTICLE_RADIUS,
@@ -258,7 +244,6 @@ class ElectrostaticsCalculator:
             tags="particle",
         )
 
-        # Draw charge label and store ID
         sign = "+" if particle.particle_type == "proton" else "-"
         particle.text_id = self.canvas.create_text(
             canvas_x,
@@ -282,7 +267,6 @@ class ElectrostaticsCalculator:
         """
         Handle right-click on canvas to show context menu for particle operations.
         """
-        # Find particle at click position
         particle = self.find_particle_at_position(event.x, event.y)
         
         if particle:
@@ -326,14 +310,12 @@ class ElectrostaticsCalculator:
         """
         if self.selected_particle is None:
             return
-        
-        # Remove from canvas
+
         if self.selected_particle.oval_id:
             self.canvas.delete(self.selected_particle.oval_id)
         if self.selected_particle.text_id:
             self.canvas.delete(self.selected_particle.text_id)
-        
-        # Remove from particles list
+
         self.particles.remove(self.selected_particle)
         
         self.status_label.config(text=f"Particle deleted. Total particles: {len(self.particles)}")
@@ -348,7 +330,6 @@ class ElectrostaticsCalculator:
         
         particle = self.selected_particle
         
-        # Ask for new charge
         new_charge = simpledialog.askfloat(
             "Edit Charge",
             f"Enter new charge for {particle.particle_type} at ({particle.x:.1f}, {particle.y:.1f}):\n"
@@ -357,10 +338,8 @@ class ElectrostaticsCalculator:
         )
         
         if new_charge is not None and new_charge != particle.charge:
-            # Update charge
             particle.charge = abs(new_charge)
             
-            # Redraw the particle label
             if particle.text_id:
                 self.canvas.delete(particle.text_id)
             
@@ -390,7 +369,6 @@ class ElectrostaticsCalculator:
         calc_window.title("Calculations")
         calc_window.geometry("600x500")
 
-        # Display current particles
         particles_frame = tk.LabelFrame(
             calc_window, text="Current Particles", padx=10, pady=10
         )
@@ -408,7 +386,6 @@ class ElectrostaticsCalculator:
             )
         particles_text.config(state=tk.DISABLED)
 
-        # Calculation options
         calc_frame = tk.LabelFrame(
             calc_window, text="Select Calculation", padx=10, pady=10
         )
@@ -432,7 +409,6 @@ class ElectrostaticsCalculator:
             )
             btn.pack(fill=tk.X, pady=2)
 
-        # Navigation buttons
         nav_frame = tk.Frame(calc_window)
         nav_frame.pack(fill=tk.X, padx=10, pady=10)
 
@@ -461,7 +437,6 @@ class ElectrostaticsCalculator:
         result_window.title("Calculation Result")
         result_window.geometry("500x400")
 
-        # Result display
         result_frame = tk.LabelFrame(result_window, text="Result", padx=10, pady=10)
         result_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
@@ -470,7 +445,6 @@ class ElectrostaticsCalculator:
         result_text.insert(tk.END, result)
         result_text.config(state=tk.DISABLED)
 
-        # Navigation buttons
         nav_frame = tk.Frame(result_window)
         nav_frame.pack(fill=tk.X, padx=10, pady=10)
 
@@ -506,10 +480,8 @@ class ElectrostaticsCalculator:
             if r == 0:
                 return "Error: Point coincides with a particle!"
 
-            # Electric field magnitude
             e_mag = self.k * particle.charge * particle.sign / (r**2)
 
-            # Components
             e_x += e_mag * (dx / r)
             e_y += e_mag * (dy / r)
 
@@ -567,10 +539,8 @@ class ElectrostaticsCalculator:
             if r == 0:
                 return "Error: Test charge coincides with a particle!"
 
-            # Force magnitude
             f_mag = self.k * test_charge * particle.charge * particle.sign / (r**2)
 
-            # Components
             f_x += f_mag * (dx / r)
             f_y += f_mag * (dy / r)
 
@@ -643,7 +613,6 @@ class ElectrostaticsCalculator:
         if len(self.particles) < 2:
             return "Need at least 2 particles to calculate dipole moment!"
 
-        # Calculate electric dipole moment
         p_x, p_y = 0, 0
         total_charge = 0
 
@@ -655,7 +624,6 @@ class ElectrostaticsCalculator:
 
         p_magnitude = math.sqrt(p_x**2 + p_y**2)
 
-        # Find center of charge
         if total_charge != 0:
             center_note = f"Note: System has net charge of {total_charge:.2e} C"
         else:
