@@ -1,8 +1,11 @@
 
 import tkinter as tk
-from tkinter import messagebox, simpledialog
+from tkinter import messagebox, simpledialog, filedialog
 import itertools
 import math
+import json
+import copy
+from datetime import datetime
 
 
 class Particle:
@@ -31,6 +34,129 @@ class Particle:
         self.sign = 1 if particle_type == "proton" else -1
         self.oval_id = None
         self.text_id = None
+    
+    def to_dict(self):
+        """Convert particle to dictionary for JSON serialization."""
+        return {
+            'x': self.x,
+            'y': self.y,
+            'charge': self.charge,
+            'particle_type': self.particle_type
+        }
+    
+    @staticmethod
+    def from_dict(data):
+        """Create particle from dictionary."""
+        return Particle(data['x'], data['y'], data['charge'], data['particle_type'])
+
+
+class PhysicsEngine:
+    """
+    Handles all physics calculations for electrostatics.
+    """
+    
+    def __init__(self, k=8.99e9, epsilon_0=8.854e-12):
+        self.k = k  # Coulomb's constant
+        self.epsilon_0 = epsilon_0  # Permittivity of free space
+    
+    def calc_electric_field(self, particles, point_x, point_y):
+        """Calculate electric field at a point."""
+        e_x, e_y = 0, 0
+        
+        for particle in particles:
+            dx = point_x - particle.x
+            dy = point_y - particle.y
+            r = math.sqrt(dx**2 + dy**2)
+            
+            if r == 0:
+                return None, f"Particle at ({particle.x:.2f}, {particle.y:.2f})"
+            
+            e_mag = self.k * particle.charge * particle.sign / (r**2)
+            e_x += e_mag * (dx / r)
+            e_y += e_mag * (dy / r)
+        
+        e_total = math.sqrt(e_x**2 + e_y**2)
+        angle = math.degrees(math.atan2(e_y, e_x))
+        
+        return (e_x, e_y, e_total, angle), None
+    
+    def calc_electric_potential(self, particles, point_x, point_y):
+        """Calculate electric potential at a point."""
+        v = 0
+        
+        for particle in particles:
+            dx = point_x - particle.x
+            dy = point_y - particle.y
+            r = math.sqrt(dx**2 + dy**2)
+            
+            if r == 0:
+                return None, f"Particle at ({particle.x:.2f}, {particle.y:.2f})"
+            
+            v += self.k * particle.charge * particle.sign / r
+        
+        return v, None
+    
+    def calc_force_on_charge(self, particles, test_charge, point_x, point_y):
+        """Calculate force on a test charge."""
+        f_x, f_y = 0, 0
+        
+        for particle in particles:
+            dx = point_x - particle.x
+            dy = point_y - particle.y
+            r = math.sqrt(dx**2 + dy**2)
+            
+            if r == 0:
+                return None, f"Particle at ({particle.x:.2f}, {particle.y:.2f})"
+            
+            f_mag = self.k * test_charge * particle.charge * particle.sign / (r**2)
+            f_x += f_mag * (dx / r)
+            f_y += f_mag * (dy / r)
+        
+        f_total = math.sqrt(f_x**2 + f_y**2)
+        angle = math.degrees(math.atan2(f_y, f_x))
+        
+        return (f_x, f_y, f_total, angle), None
+    
+    def calc_potential_energy(self, particles):
+        """Calculate total potential energy of the system."""
+        u = 0
+        
+        for p1, p2 in itertools.combinations(particles, 2):
+            dx = p2.x - p1.x
+            dy = p2.y - p1.y
+            r = math.sqrt(dx**2 + dy**2)
+            u += self.k * (p1.charge * p1.sign) * (p2.charge * p2.sign) / r
+        
+        return u
+    
+    def calc_electric_flux(self, particles, center_x, center_y, radius):
+        """Calculate electric flux through a Gaussian surface."""
+        enclosed_charge = 0
+        
+        for particle in particles:
+            dx = particle.x - center_x
+            dy = particle.y - center_y
+            distance = math.sqrt(dx**2 + dy**2)
+            
+            if distance <= radius:
+                enclosed_charge += particle.charge * particle.sign
+        
+        flux = enclosed_charge / self.epsilon_0
+        return enclosed_charge, flux
+    
+    def calc_dipole_moment(self, particles):
+        """Calculate electric dipole moment."""
+        p_x, p_y = 0, 0
+        total_charge = 0
+        
+        for particle in particles:
+            charge = particle.charge * particle.sign
+            p_x += charge * particle.x
+            p_y += charge * particle.y
+            total_charge += charge
+        
+        p_magnitude = math.sqrt(p_x**2 + p_y**2)
+        return p_x, p_y, p_magnitude, total_charge
 
 
 class ElectrostaticsCalculator:
@@ -63,6 +189,14 @@ class ElectrostaticsCalculator:
 
         self.particles = []
         self.current_mode = None  # 'add_proton', 'add_electron', or None
+        
+        # Undo/Redo stacks
+        self.undo_stack = []
+        self.redo_stack = []
+        self.MAX_UNDO_STACK = 50
+        
+        # Physics engine
+        self.physics_engine = PhysicsEngine(self.k, self.epsilon_0)
 
         self.setup_main_interface()
 
@@ -105,6 +239,22 @@ class ElectrostaticsCalculator:
 
         clear_btn = tk.Button(button_frame, text="Clear All", command=self.clear_all)
         clear_btn.pack(side=tk.LEFT, padx=5)
+        
+        # Second row of buttons for file operations and undo/redo
+        button_frame2 = tk.Frame(main_frame)
+        button_frame2.pack(fill=tk.X, pady=(0, 10))
+        
+        save_btn = tk.Button(button_frame2, text="Save Configuration", command=self.save_configuration)
+        save_btn.pack(side=tk.LEFT, padx=5)
+        
+        load_btn = tk.Button(button_frame2, text="Load Configuration", command=self.load_configuration)
+        load_btn.pack(side=tk.LEFT, padx=5)
+        
+        self.undo_btn = tk.Button(button_frame2, text="Undo", command=self.undo, state=tk.DISABLED)
+        self.undo_btn.pack(side=tk.LEFT, padx=5)
+        
+        self.redo_btn = tk.Button(button_frame2, text="Redo", command=self.redo, state=tk.DISABLED)
+        self.redo_btn.pack(side=tk.LEFT, padx=5)
 
         self.canvas = tk.Canvas(
             main_frame, width=self.CANVAS_WIDTH, height=self.CANVAS_HEIGHT, 
@@ -277,6 +427,7 @@ class ElectrostaticsCalculator:
             validated_charge = self.validate_charge(charge, particle_type)
             
             if validated_charge is not None:
+                self.save_state()  # Save state before adding particle
                 particle = Particle(x, y, validated_charge, particle_type)
                 self.particles.append(particle)
                 self.draw_particle(particle)
@@ -319,6 +470,8 @@ class ElectrostaticsCalculator:
         """
         Clear all particles and reset the canvas
         """
+        if self.particles:  # Only save state if there are particles to clear
+            self.save_state()
         self.particles = []
         self.selected_particle = None
         self.canvas.delete("all")
@@ -373,12 +526,7 @@ class ElectrostaticsCalculator:
         if self.selected_particle is None:
             return
 
-        if self.selected_particle.oval_id:
-            self.canvas.delete(self.selected_particle.oval_id)
-        if self.selected_particle.text_id:
-            self.canvas.delete(self.selected_particle.text_id)
-
-        self.particles.remove(self.selected_particle)
+        self.save_state()  # Save state before deleting
         
         self.status_label.config(text=f"Particle deleted. Total particles: {len(self.particles)}")
         self.selected_particle = None
@@ -407,6 +555,7 @@ class ElectrostaticsCalculator:
         validated_charge = self.validate_charge(new_charge, particle.particle_type)
         
         if validated_charge is not None and validated_charge != particle.charge:
+            self.save_state()  # Save state before editing
             particle.charge = validated_charge
             
             if particle.text_id:
@@ -426,9 +575,151 @@ class ElectrostaticsCalculator:
         
         self.selected_particle = None
 
+    def save_state(self):
+        """Save the current state for undo functionality."""
+        # Create a deep copy of particles (without canvas IDs)
+        state = []
+        for p in self.particles:
+            state.append(p.to_dict())
+        
+        self.undo_stack.append(state)
+        
+        # Limit undo stack size
+        if len(self.undo_stack) > self.MAX_UNDO_STACK:
+            self.undo_stack.pop(0)
+        
+        # Clear redo stack when a new action is performed
+        self.redo_stack.clear()
+        
+        self.update_undo_redo_buttons()
+    
+    def undo(self):
+        """Undo the last action."""
+        if not self.undo_stack:
+            return
+        
+        # Save current state to redo stack
+        current_state = [p.to_dict() for p in self.particles]
+        self.redo_stack.append(current_state)
+        
+        # Restore previous state
+        previous_state = self.undo_stack.pop()
+        self.restore_state(previous_state)
+        
+        self.update_undo_redo_buttons()
+        self.status_label.config(text="Undo successful")
+    
+    def redo(self):
+        """Redo the last undone action."""
+        if not self.redo_stack:
+            return
+        
+        # Save current state to undo stack
+        current_state = [p.to_dict() for p in self.particles]
+        self.undo_stack.append(current_state)
+        
+        # Restore redo state
+        redo_state = self.redo_stack.pop()
+        self.restore_state(redo_state)
+        
+        self.update_undo_redo_buttons()
+        self.status_label.config(text="Redo successful")
+    
+    def restore_state(self, state):
+        """Restore particles from a saved state."""
+        # Clear current particles
+        self.particles.clear()
+        self.canvas.delete("particle")
+        
+        # Restore particles from state
+        for particle_data in state:
+            particle = Particle.from_dict(particle_data)
+            self.particles.append(particle)
+            self.draw_particle(particle)
+    
+    def update_undo_redo_buttons(self):
+        """Update undo/redo button states."""
+        self.undo_btn.config(state=tk.NORMAL if self.undo_stack else tk.DISABLED)
+        self.redo_btn.config(state=tk.NORMAL if self.redo_stack else tk.DISABLED)
+    
+    def save_configuration(self):
+        """Save current particle configuration to a JSON file."""
+        if not self.particles:
+            messagebox.showinfo("No Data", "No particles to save.")
+            return
+        
+        filename = filedialog.asksaveasfilename(
+            defaultextension=".json",
+            filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
+            title="Save Particle Configuration"
+        )
+        
+        if not filename:
+            return
+        
+        try:
+            config = {
+                'metadata': {
+                    'created': datetime.now().isoformat(),
+                    'particle_count': len(self.particles),
+                    'version': '1.0'
+                },
+                'particles': [p.to_dict() for p in self.particles]
+            }
+            
+            with open(filename, 'w') as f:
+                json.dump(config, f, indent=2)
+            
+            self.status_label.config(text=f"Configuration saved to {filename}")
+            messagebox.showinfo("Save Successful", f"Saved {len(self.particles)} particles to:\\n{filename}")
+        except Exception as e:
+            messagebox.showerror("Save Error", f"Failed to save configuration:\\n{str(e)}")
+    
+    def load_configuration(self):
+        """Load particle configuration from a JSON file."""
+        filename = filedialog.askopenfilename(
+            filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
+            title="Load Particle Configuration"
+        )
+        
+        if not filename:
+            return
+        
+        try:
+            with open(filename, 'r') as f:
+                config = json.load(f)
+            
+            # Validate configuration
+            if 'particles' not in config:
+                raise ValueError("Invalid configuration file: missing 'particles' key")
+            
+            # Save current state before loading
+            if self.particles:
+                self.save_state()
+            
+            # Clear current particles
+            self.particles.clear()
+            self.canvas.delete("particle")
+            
+            # Load particles
+            for particle_data in config['particles']:
+                particle = Particle.from_dict(particle_data)
+                self.particles.append(particle)
+                self.draw_particle(particle)
+            
+            self.status_label.config(text=f"Configuration loaded from {filename}")
+            messagebox.showinfo(
+                "Load Successful", 
+                f"Loaded {len(self.particles)} particles from:\\n{filename}"
+            )
+        except json.JSONDecodeError:
+            messagebox.showerror("Load Error", "Invalid JSON file format")
+        except Exception as e:
+            messagebox.showerror("Load Error", f"Failed to load configuration:\\n{str(e)}")
+
     def open_calculation_window(self):
         """
-        Open a new window for calculations
+        Open a modal window for calculations
         """
         if not self.particles:
             messagebox.showwarning(
@@ -445,6 +736,10 @@ class ElectrostaticsCalculator:
         calc_window = tk.Toplevel(self.root)
         calc_window.title("Calculations")
         calc_window.geometry("600x500")
+        
+        # Make window modal
+        calc_window.transient(self.root)
+        calc_window.grab_set()
 
         particles_frame = tk.LabelFrame(
             calc_window, text="Current Particles", padx=10, pady=10
@@ -556,31 +851,19 @@ class ElectrostaticsCalculator:
         if point_x is None or point_y is None:
             return "Calculation cancelled."
 
-        e_x, e_y = 0, 0
-
-        for particle in self.particles:
-            dx = point_x - particle.x
-            dy = point_y - particle.y
-            r = math.sqrt(dx**2 + dy**2)
-
-            if r == 0:
-                return (
-                    "Error: Test charge coincides with a particle!\n\n"
-                    "The test charge position is at the same location as a particle.\n"
-                    "Force calculation is undefined at this location.\n\n"
-                    "Recovery Suggestion:\n"
-                    "Choose a different position that doesn't overlap with any particle.\n"
-                    f"Particle is at: ({particle.x:.2f}, {particle.y:.2f})"
-                )
-
-            e_mag = self.k * particle.charge * particle.sign / (r**2)
-
-            e_x += e_mag * (dx / r)
-            e_y += e_mag * (dy / r)
-
-        e_total = math.sqrt(e_x**2 + e_y**2)
-        angle = math.degrees(math.atan2(e_y, e_x))
-
+        result, error_location = self.physics_engine.calc_electric_field(self.particles, point_x, point_y)
+        
+        if result is None:
+            return (
+                "Error: Point coincides with a particle!\n\n"
+                "The selected point is at the same location as a particle.\n"
+                "Electric field is undefined at a point charge location.\n\n"
+                "Recovery Suggestion:\n"
+                "Choose a different point that doesn't overlap with any particle.\n"
+                f"{error_location}"
+            )
+        
+        e_x, e_y, e_total, angle = result
         return (
             f"Electric Field at ({point_x}, {point_y}):\n\n"
             f"Ex = {e_x:.2e} N/C\n"
@@ -599,24 +882,17 @@ class ElectrostaticsCalculator:
         if point_x is None or point_y is None:
             return "Calculation cancelled."
 
-        v = 0
-
-        for particle in self.particles:
-            dx = point_x - particle.x
-            dy = point_y - particle.y
-            r = math.sqrt(dx**2 + dy**2)
-
-            if r == 0:
-                return (
-                    "Error: Point coincides with a particle!\n\n"
-                    "The selected point is at the same location as a particle.\n"
-                    "Electric potential is undefined at a point charge location.\n\n"
-                    "Recovery Suggestion:\n"
-                    "Choose a different point that doesn't overlap with any particle.\n"
-                    f"Particle is at: ({particle.x:.2f}, {particle.y:.2f})"
-                )
-
-            v += self.k * particle.charge * particle.sign / r
+        v, error_location = self.physics_engine.calc_electric_potential(self.particles, point_x, point_y)
+        
+        if v is None:
+            return (
+                "Error: Point coincides with a particle!\n\n"
+                "The selected point is at the same location as a particle.\n"
+                "Electric potential is undefined at a point charge location.\n\n"
+                "Recovery Suggestion:\n"
+                "Choose a different point that doesn't overlap with any particle.\n"
+                f"{error_location}"
+            )
 
         return f"Electric Potential at ({point_x}, {point_y}):\n\n" f"V = {v:.2e} V"
 
@@ -629,31 +905,19 @@ class ElectrostaticsCalculator:
         if None in [test_charge, point_x, point_y]:
             return "Calculation cancelled."
 
-        f_x, f_y = 0, 0
-
-        for particle in self.particles:
-            dx = point_x - particle.x
-            dy = point_y - particle.y
-            r = math.sqrt(dx**2 + dy**2)
-
-            if r == 0:
-                return (
-                    "Error: Test charge coincides with a particle!\n\n"
-                    "The test charge position is at the same location as a particle.\n"
-                    "Force calculation is undefined at this location.\n\n"
-                    "Recovery Suggestion:\n"
-                    "Choose a different position that doesn't overlap with any particle.\n"
-                    f"Particle is at: ({particle.x:.2f}, {particle.y:.2f})"
-                )
-
-            f_mag = self.k * test_charge * particle.charge * particle.sign / (r**2)
-
-            f_x += f_mag * (dx / r)
-            f_y += f_mag * (dy / r)
-
-        f_total = math.sqrt(f_x**2 + f_y**2)
-        angle = math.degrees(math.atan2(f_y, f_x))
-
+        result, error_location = self.physics_engine.calc_force_on_charge(self.particles, test_charge, point_x, point_y)
+        
+        if result is None:
+            return (
+                "Error: Test charge coincides with a particle!\n\n"
+                "The test charge position is at the same location as a particle.\n"
+                "Force calculation is undefined at this location.\n\n"
+                "Recovery Suggestion:\n"
+                "Choose a different position that doesn't overlap with any particle.\n"
+                f"{error_location}"
+            )
+        
+        f_x, f_y, f_total, angle = result
         return (
             f"Force on charge {test_charge} C at ({point_x}, {point_y}):\n\n"
             f"Fx = {f_x:.2e} N\n"
@@ -674,15 +938,7 @@ class ElectrostaticsCalculator:
                 "2. Return to this calculation when you have 2 or more particles"
             )
 
-        u = 0
-
-        for p1, p2 in itertools.combinations(
-            self.particles, 2
-        ):  # Automatically gives you pairs
-            dx = p2.x - p1.x
-            dy = p2.y - p1.y
-            r = math.sqrt(dx**2 + dy**2)
-            u += self.k * (p1.charge * p1.sign) * (p2.charge * p2.sign) / r
+        u = self.physics_engine.calc_potential_energy(self.particles)
 
         return f"Potential Energy of the System:\n\n" f"U = {u:.2e} J"
 
@@ -695,17 +951,7 @@ class ElectrostaticsCalculator:
         if None in [radius, center_x, center_y]:
             return "Calculation cancelled."
 
-        enclosed_charge = 0
-
-        for particle in self.particles:
-            dx = particle.x - center_x
-            dy = particle.y - center_y
-            distance = math.sqrt(dx**2 + dy**2)
-
-            if distance <= radius:
-                enclosed_charge += particle.charge * particle.sign
-
-        flux = enclosed_charge / self.epsilon_0
+        enclosed_charge, flux = self.physics_engine.calc_electric_flux(self.particles, center_x, center_y, radius)
 
         return (
             f"Electric Flux through Gaussian surface:\n\n"
@@ -734,16 +980,7 @@ class ElectrostaticsCalculator:
                 "2. Return to this calculation when you have 2 or more particles"
             )
 
-        p_x, p_y = 0, 0
-        total_charge = 0
-
-        for particle in self.particles:
-            charge = particle.charge * particle.sign
-            p_x += charge * particle.x
-            p_y += charge * particle.y
-            total_charge += charge
-
-        p_magnitude = math.sqrt(p_x**2 + p_y**2)
+        p_x, p_y, p_magnitude, total_charge = self.physics_engine.calc_dipole_moment(self.particles)
 
         if total_charge != 0:
             center_note = f"Note: System has net charge of {total_charge:.2e} C"
