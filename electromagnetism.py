@@ -20,6 +20,8 @@ class Particle:
         charge (float): The charge of the particle.
         sign (int): The sign of the particle's charge (1 for positive, -1 for negative).
         particle_type (str): Type of the particle (e.g., "electron", "proton").
+        oval_id (int): Canvas ID for the particle circle.
+        text_id (int): Canvas ID for the charge label.
 
     Methods:
         __init__(self, x, y, charge, sign, particle_type):
@@ -32,6 +34,8 @@ class Particle:
         self.charge = charge
         self.particle_type = particle_type
         self.sign = 1 if particle_type == "proton" else -1
+        self.oval_id = None
+        self.text_id = None
 
 
 class ElectrostaticsCalculator:
@@ -116,11 +120,19 @@ class ElectrostaticsCalculator:
         )
         self.canvas.pack(fill=tk.BOTH, expand=True)
         self.canvas.bind("<Button-1>", self.canvas_click)
+        self.canvas.bind("<Button-3>", self.canvas_right_click)  # Right-click
+        self.canvas.bind("<Double-Button-1>", self.canvas_double_click)  # Double-click
+
+        # Context menu for particles
+        self.context_menu = tk.Menu(self.root, tearoff=0)
+        self.context_menu.add_command(label="Delete Particle", command=self.delete_selected_particle)
+        self.context_menu.add_command(label="Edit Charge", command=self.edit_selected_particle)
+        self.selected_particle = None
 
         # Status label
         self.status_label = tk.Label(
             main_frame,
-            text="Click 'Add Positive Particle' or 'Add Negative Particle' to start",
+            text="Add particles | Right-click to delete | Double-click to edit charge",
             relief=tk.SUNKEN,
             anchor=tk.W,
         )
@@ -228,13 +240,14 @@ class ElectrostaticsCalculator:
 
     def draw_particle(self, particle):
         """
-        Draw a particle on the canvas based on its coordinates and type
+        Draw a particle on the canvas based on its coordinates and type.
+        Stores canvas IDs in the particle object.
         """
         canvas_x, canvas_y = self.coords_to_canvas(particle.x, particle.y)
         color = "blue" if particle.particle_type == "proton" else "red"
 
-        # Draw particle
-        self.canvas.create_oval(
+        # Draw particle and store ID
+        particle.oval_id = self.canvas.create_oval(
             canvas_x - self.PARTICLE_RADIUS,
             canvas_y - self.PARTICLE_RADIUS,
             canvas_x + self.PARTICLE_RADIUS,
@@ -242,15 +255,17 @@ class ElectrostaticsCalculator:
             fill=color,
             outline="black",
             width=2,
+            tags="particle",
         )
 
-        # Draw charge label
+        # Draw charge label and store ID
         sign = "+" if particle.particle_type == "proton" else "-"
-        self.canvas.create_text(
+        particle.text_id = self.canvas.create_text(
             canvas_x,
             canvas_y - 20,
             text=f"{sign}{particle.charge}",
             font=("Arial", 10, "bold"),
+            tags="particle",
         )
 
     def clear_all(self):
@@ -258,9 +273,110 @@ class ElectrostaticsCalculator:
         Clear all particles and reset the canvas
         """
         self.particles = []
+        self.selected_particle = None
         self.canvas.delete("all")
         self.draw_grid()
         self.status_label.config(text="All particles cleared")
+
+    def canvas_right_click(self, event):
+        """
+        Handle right-click on canvas to show context menu for particle operations.
+        """
+        # Find particle at click position
+        particle = self.find_particle_at_position(event.x, event.y)
+        
+        if particle:
+            self.selected_particle = particle
+            self.context_menu.post(event.x_root, event.y_root)
+        else:
+            self.selected_particle = None
+
+    def canvas_double_click(self, event):
+        """
+        Handle double-click on canvas to edit particle charge.
+        """
+        # Ignore if in add mode
+        if self.current_mode is not None:
+            return
+            
+        particle = self.find_particle_at_position(event.x, event.y)
+        
+        if particle:
+            self.selected_particle = particle
+            self.edit_selected_particle()
+
+    def find_particle_at_position(self, canvas_x, canvas_y):
+        """
+        Find a particle at the given canvas position.
+        Returns the particle object or None.
+        """
+        for particle in self.particles:
+            px, py = self.coords_to_canvas(particle.x, particle.y)
+            distance = math.sqrt((canvas_x - px)**2 + (canvas_y - py)**2)
+            
+            # Check if click is within particle radius (with some tolerance)
+            if distance <= self.PARTICLE_RADIUS + 5:
+                return particle
+        
+        return None
+
+    def delete_selected_particle(self):
+        """
+        Delete the currently selected particle.
+        """
+        if self.selected_particle is None:
+            return
+        
+        # Remove from canvas
+        if self.selected_particle.oval_id:
+            self.canvas.delete(self.selected_particle.oval_id)
+        if self.selected_particle.text_id:
+            self.canvas.delete(self.selected_particle.text_id)
+        
+        # Remove from particles list
+        self.particles.remove(self.selected_particle)
+        
+        self.status_label.config(text=f"Particle deleted. Total particles: {len(self.particles)}")
+        self.selected_particle = None
+
+    def edit_selected_particle(self):
+        """
+        Edit the charge of the currently selected particle.
+        """
+        if self.selected_particle is None:
+            return
+        
+        particle = self.selected_particle
+        
+        # Ask for new charge
+        new_charge = simpledialog.askfloat(
+            "Edit Charge",
+            f"Enter new charge for {particle.particle_type} at ({particle.x:.1f}, {particle.y:.1f}):\n"
+            f"Current charge: {particle.charge}",
+            initialvalue=particle.charge,
+        )
+        
+        if new_charge is not None and new_charge != particle.charge:
+            # Update charge
+            particle.charge = abs(new_charge)
+            
+            # Redraw the particle label
+            if particle.text_id:
+                self.canvas.delete(particle.text_id)
+            
+            canvas_x, canvas_y = self.coords_to_canvas(particle.x, particle.y)
+            sign = "+" if particle.particle_type == "proton" else "-"
+            particle.text_id = self.canvas.create_text(
+                canvas_x,
+                canvas_y - 20,
+                text=f"{sign}{particle.charge}",
+                font=("Arial", 10, "bold"),
+                tags="particle",
+            )
+            
+            self.status_label.config(text=f"Particle charge updated to {sign}{particle.charge}")
+        
+        self.selected_particle = None
 
     def open_calculation_window(self):
         """
