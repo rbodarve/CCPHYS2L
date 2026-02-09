@@ -42,9 +42,19 @@ class ElectrostaticsCalculator:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("Electrostatics Calculator")
-        self.root.geometry("1000x700")
+        
+        # Window and canvas constants
+        self.WINDOW_WIDTH = 1000
+        self.WINDOW_HEIGHT = 700
+        self.CANVAS_WIDTH = 800
+        self.CANVAS_HEIGHT = 600
+        self.GRID_SCALE = 20  # Pixels per unit in coordinate system
+        self.GRID_SPACING = 40  # Spacing between grid lines in pixels
+        self.PARTICLE_RADIUS = 8  # Radius for drawing particles
+        
+        self.root.geometry(f"{self.WINDOW_WIDTH}x{self.WINDOW_HEIGHT}")
 
-        # Constants
+        # Physics constants
         self.k = 8.99e9  # Coulomb's constant in N⋅m²/C²
         self.epsilon_0 = 8.854e-12  # Permittivity of free space
 
@@ -101,7 +111,8 @@ class ElectrostaticsCalculator:
 
         # Canvas for cartesian plane
         self.canvas = tk.Canvas(
-            main_frame, width=800, height=600, bg="white", relief=tk.SUNKEN, bd=2
+            main_frame, width=self.CANVAS_WIDTH, height=self.CANVAS_HEIGHT, 
+            bg="white", relief=tk.SUNKEN, bd=2
         )
         self.canvas.pack(fill=tk.BOTH, expand=True)
         self.canvas.bind("<Button-1>", self.canvas_click)
@@ -121,8 +132,8 @@ class ElectrostaticsCalculator:
         """Draw cartesian coordinate system"""
         self.canvas.delete("grid")
 
-        width = self.canvas.winfo_width() or 800
-        height = self.canvas.winfo_height() or 600
+        width = self.canvas.winfo_width() or self.CANVAS_WIDTH
+        height = self.canvas.winfo_height() or self.CANVAS_HEIGHT
 
         # Center lines (axes)
         center_x, center_y = width // 2, height // 2
@@ -134,9 +145,9 @@ class ElectrostaticsCalculator:
         )
 
         # Grid lines
-        for i in range(0, width, 40):
+        for i in range(0, width, self.GRID_SPACING):
             self.canvas.create_line(i, 0, i, height, fill="lightgray", tags="grid")
-        for i in range(0, height, 40):
+        for i in range(0, height, self.GRID_SPACING):
             self.canvas.create_line(0, i, width, i, fill="lightgray", tags="grid")
 
         # Labels
@@ -152,22 +163,22 @@ class ElectrostaticsCalculator:
 
     def canvas_to_coords(self, canvas_x, canvas_y):
         """Convert canvas coordinates to cartesian coordinates"""
-        width = self.canvas.winfo_width() or 800
-        height = self.canvas.winfo_height() or 600
+        width = self.canvas.winfo_width() or self.CANVAS_WIDTH
+        height = self.canvas.winfo_height() or self.CANVAS_HEIGHT
         center_x, center_y = width // 2, height // 2
 
-        x = (canvas_x - center_x) / 20  # Scale factor
-        y = (center_y - canvas_y) / 20  # Inverted Y axis
+        x = (canvas_x - center_x) / self.GRID_SCALE
+        y = (center_y - canvas_y) / self.GRID_SCALE
         return x, y
 
     def coords_to_canvas(self, x, y):
         """Convert cartesian coordinates to canvas coordinates"""
-        width = self.canvas.winfo_width() or 800
-        height = self.canvas.winfo_height() or 600
+        width = self.canvas.winfo_width() or self.CANVAS_WIDTH
+        height = self.canvas.winfo_height() or self.CANVAS_HEIGHT
         center_x, center_y = width // 2, height // 2
 
-        canvas_x = center_x + x * 20
-        canvas_y = center_y - y * 20
+        canvas_x = center_x + x * self.GRID_SCALE
+        canvas_y = center_y - y * self.GRID_SCALE
         return canvas_x, canvas_y
 
     def toggle_proton_mode(self):
@@ -224,10 +235,10 @@ class ElectrostaticsCalculator:
 
         # Draw particle
         self.canvas.create_oval(
-            canvas_x - 8,
-            canvas_y - 8,
-            canvas_x + 8,
-            canvas_y + 8,
+            canvas_x - self.PARTICLE_RADIUS,
+            canvas_y - self.PARTICLE_RADIUS,
+            canvas_x + self.PARTICLE_RADIUS,
+            canvas_y + self.PARTICLE_RADIUS,
             fill=color,
             outline="black",
             width=2,
