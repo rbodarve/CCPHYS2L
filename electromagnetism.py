@@ -4,7 +4,6 @@ from tkinter import messagebox, simpledialog, filedialog
 import itertools
 import math
 import json
-import copy
 from datetime import datetime
 
 
@@ -16,13 +15,13 @@ class Particle:
         x (float): The x-coordinate of the particle.
         y (float): The y-coordinate of the particle.
         charge (float): The charge of the particle.
-        sign (int): The sign of the particle's charge (1 for positive, -1 for negative).
         particle_type (str): Type of the particle (e.g., "electron", "proton").
+        sign (int): The sign of the particle's charge (1 for positive, -1 for negative).
         oval_id (int): Canvas ID for the particle circle.
         text_id (int): Canvas ID for the charge label.
 
     Methods:
-        __init__(self, x, y, charge, sign, particle_type):
+        __init__(self, x, y, charge, particle_type):
             Initializes a new Particle instance with the given attributes.
     """
 
@@ -120,14 +119,18 @@ class PhysicsEngine:
     def calc_potential_energy(self, particles):
         """Calculate total potential energy of the system."""
         u = 0
-        
+
         for p1, p2 in itertools.combinations(particles, 2):
             dx = p2.x - p1.x
             dy = p2.y - p1.y
             r = math.sqrt(dx**2 + dy**2)
+
+            if r == 0:
+                return None, f"Particles at ({p1.x:.2f}, {p1.y:.2f})"
+
             u += self.k * (p1.charge * p1.sign) * (p2.charge * p2.sign) / r
-        
-        return u
+
+        return u, None
     
     def calc_electric_flux(self, particles, center_x, center_y, radius):
         """Calculate electric flux through a Gaussian surface."""
@@ -174,7 +177,7 @@ class ElectrostaticsCalculator:
         self.CANVAS_WIDTH = 800
         self.CANVAS_HEIGHT = 600
         self.GRID_SCALE = 20  # Pixels per unit in coordinate system
-        self.GRID_SPACING = 40  # Spacing between grid lines in pixels
+        self.GRID_SPACING = self.GRID_SCALE  # One grid square per coordinate unit
         self.PARTICLE_RADIUS = 8  # Radius for drawing particles
         
         self.root.geometry(f"{self.WINDOW_WIDTH}x{self.WINDOW_HEIGHT}")
@@ -355,7 +358,7 @@ class ElectrostaticsCalculator:
         self.status_label.config(text="Click on the plane to place a negative particle")
         self.canvas.config(cursor="crosshair")
 
-    def validate_charge(self, charge, particle_type):
+    def validate_charge(self, charge):
         """
         Validate charge value and return validated charge or None if invalid.
         Shows appropriate error messages for invalid inputs.
@@ -424,7 +427,7 @@ class ElectrostaticsCalculator:
             )
 
             # Validate the charge
-            validated_charge = self.validate_charge(charge, particle_type)
+            validated_charge = self.validate_charge(charge)
             
             if validated_charge is not None:
                 self.save_state()  # Save state before adding particle
@@ -461,7 +464,7 @@ class ElectrostaticsCalculator:
         particle.text_id = self.canvas.create_text(
             canvas_x,
             canvas_y - 20,
-            text=f"{sign}{particle.charge}",
+            text=f"{sign}{particle.charge:.2e}",
             font=("Arial", 10, "bold"),
             tags="particle",
         )
@@ -527,7 +530,14 @@ class ElectrostaticsCalculator:
             return
 
         self.save_state()  # Save state before deleting
-        
+
+        particle = self.selected_particle
+        if particle.oval_id:
+            self.canvas.delete(particle.oval_id)
+        if particle.text_id:
+            self.canvas.delete(particle.text_id)
+        self.particles.remove(particle)
+
         self.status_label.config(text=f"Particle deleted. Total particles: {len(self.particles)}")
         self.selected_particle = None
 
@@ -552,7 +562,7 @@ class ElectrostaticsCalculator:
         )
         
         # Validate the new charge
-        validated_charge = self.validate_charge(new_charge, particle.particle_type)
+        validated_charge = self.validate_charge(new_charge)
         
         if validated_charge is not None and validated_charge != particle.charge:
             self.save_state()  # Save state before editing
@@ -566,7 +576,7 @@ class ElectrostaticsCalculator:
             particle.text_id = self.canvas.create_text(
                 canvas_x,
                 canvas_y - 20,
-                text=f"{sign}{particle.charge}",
+                text=f"{sign}{particle.charge:.2e}",
                 font=("Arial", 10, "bold"),
                 tags="particle",
             )
@@ -671,9 +681,9 @@ class ElectrostaticsCalculator:
                 json.dump(config, f, indent=2)
             
             self.status_label.config(text=f"Configuration saved to {filename}")
-            messagebox.showinfo("Save Successful", f"Saved {len(self.particles)} particles to:\\n{filename}")
+            messagebox.showinfo("Save Successful", f"Saved {len(self.particles)} particles to:\n{filename}")
         except Exception as e:
-            messagebox.showerror("Save Error", f"Failed to save configuration:\\n{str(e)}")
+            messagebox.showerror("Save Error", f"Failed to save configuration:\n{str(e)}")
     
     def load_configuration(self):
         """Load particle configuration from a JSON file."""
@@ -710,12 +720,12 @@ class ElectrostaticsCalculator:
             self.status_label.config(text=f"Configuration loaded from {filename}")
             messagebox.showinfo(
                 "Load Successful", 
-                f"Loaded {len(self.particles)} particles from:\\n{filename}"
+                f"Loaded {len(self.particles)} particles from:\n{filename}"
             )
         except json.JSONDecodeError:
             messagebox.showerror("Load Error", "Invalid JSON file format")
         except Exception as e:
-            messagebox.showerror("Load Error", f"Failed to load configuration:\\n{str(e)}")
+            messagebox.showerror("Load Error", f"Failed to load configuration:\n{str(e)}")
 
     def open_calculation_window(self):
         """
@@ -754,7 +764,7 @@ class ElectrostaticsCalculator:
             particles_text.insert(
                 tk.END,
                 f"Particle {i+1}: {p.particle_type.capitalize()} at "
-                f"({p.x:.2f}, {p.y:.2f}), Charge: {sign}{p.charge}\n",
+                f"({p.x:.2f}, {p.y:.2f}), Charge: {sign}{p.charge:.2e} C\n",
             )
         particles_text.config(state=tk.DISABLED)
 
@@ -938,7 +948,16 @@ class ElectrostaticsCalculator:
                 "2. Return to this calculation when you have 2 or more particles"
             )
 
-        u = self.physics_engine.calc_potential_energy(self.particles)
+        u, error_location = self.physics_engine.calc_potential_energy(self.particles)
+
+        if u is None:
+            return (
+                "Error: Two particles occupy the same location!\n\n"
+                "Potential energy is undefined when particles coincide.\n\n"
+                "Recovery Suggestion:\n"
+                "Move or delete one of the overlapping particles.\n"
+                f"{error_location}"
+            )
 
         return f"Potential Energy of the System:\n\n" f"U = {u:.2e} J"
 
@@ -963,8 +982,11 @@ class ElectrostaticsCalculator:
 
     def calc_gauss_law(self):
         """Calculate electric flux using Gauss's Law."""
+        flux_result = self.calc_electric_flux()
+        if flux_result == "Calculation cancelled.":
+            return flux_result
         return (
-            self.calc_electric_flux() + "\n\nGauss's Law: ∮ E⋅dA = Q_enclosed/ε₀\n"
+            flux_result + "\n\nGauss's Law: ∮ E⋅dA = Q_enclosed/ε₀\n"
             "This calculation uses Gauss's law to find the electric flux."
         )
 

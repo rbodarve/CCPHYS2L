@@ -26,12 +26,14 @@ A comprehensive Python application for visualizing and calculating electrostatic
 
 - Add positive particles (protons) - displayed as blue circles
 - Add negative particles (electrons) - displayed as red circles
-- Custom charge values for each particle
+- Custom charge values for each particle (validated to a physical range)
 - Visual charge labels on each particle
+- **Edit Charge** - Double-click a particle (or right-click → Edit Charge) to change its charge
+- **Delete Particle** - Right-click a particle → Delete Particle
 - Clear all particles functionality
 - **Save Configuration** - Save current particle setup to JSON file
 - **Load Configuration** - Load previously saved particle configurations
-- **Undo/Redo** - Undo and redo particle placement actions
+- **Undo/Redo** - Undo and redo particle actions (add, delete, edit, clear, load)
 
 ### Comprehensive Calculations
 
@@ -70,7 +72,7 @@ python electromagnetism.py
 1. **Launch the application** - Run the Python script
 2. **Add particles** - Click either "Add Positive Particle" or "Add Negative Particle"
 3. **Place particles** - Click anywhere on the Cartesian plane to place a particle
-4. **Set charge** - Enter the charge value when prompted
+4. **Set charge** - Enter the charge magnitude when prompted (the sign is set by particle type)
 5. **Repeat** - Add as many particles as needed
 6. **Calculate** - Click the "Calculate" button to access computation options
 
@@ -78,14 +80,19 @@ python electromagnetism.py
 
 - **Positive Particles**: Click "Add Positive Particle" → Click on plane → Enter charge
 - **Negative Particles**: Click "Add Negative Particle" → Click on plane → Enter charge
-- **Coordinates**: Based on the visual grid where each square represents one unit
-- **Charge Values**: Can be any positive number (sign is determined by particle type)
+- **Coordinates**: Based on the visual grid where each square represents one unit (1 meter)
+- **Charge Values**: Enter the magnitude only; the sign is set automatically by particle type. Values are validated to the range 1×10⁻¹² C to 1×10⁻³ C (zero and out-of-range values are rejected)
+
+### Editing and Deleting Particles
+
+- **Edit Charge**: Double-click a particle, or right-click it and choose "Edit Charge", then enter a new magnitude
+- **Delete Particle**: Right-click a particle and choose "Delete Particle"
 
 ### Configuration Management
 
 - **Save Configuration**: Save your current particle setup to a JSON file for later use
 - **Load Configuration**: Load a previously saved particle configuration
-- **Undo**: Undo the last particle placement action
+- **Undo**: Undo the last action (add, delete, edit charge, clear, or load)
 - **Redo**: Redo a previously undone action
 - **Clear All**: Remove all particles from the plane
 
@@ -153,12 +160,13 @@ After each calculation, you have three options:
 - X-axis increases to the right
 - Y-axis increases upward (standard mathematical convention)
 - Grid scale: 20 pixels per unit
+- Distance unit: 1 grid unit = 1 meter (coordinates are used directly as meters in the SI calculations)
 
 ### Error Handling
 
-- Prevents division by zero when points coincide with particles
-- Input validation for all user entries
-- Graceful handling of calculation errors
+- Prevents division by zero when a calculation point coincides with a particle, or when two particles occupy the same location
+- Charge input validation with an enforced physical range
+- Graceful handling of calculation and file save/load errors with recovery suggestions
 
 ## File Structure
 
@@ -166,8 +174,10 @@ After each calculation, you have three options:
 CCPHYS2L/
 │
 ├── electromagnetism.py    # Main application file
-├── LICENSE.md            # MIT License
-└── README.md             # This file
+├── LICENSE.md             # MIT License
+├── README.md              # This file
+├── .gitignore             # Git ignore rules
+└── .vscode/               # VS Code workspace settings
 ```
 
 ## Dependencies
@@ -184,23 +194,15 @@ CCPHYS2L/
 - `tkinter.filedialog`: File save/load dialogs
 - `itertools`: For efficient iteration operations
 - `json`: For saving and loading particle configurations
-- `copy`: For deep copying objects
 - `datetime`: For timestamping saved files
 
 ## System Requirements
 
-### Minimum Requirements
+- Python 3.7 or higher with tkinter (part of the standard library)
+- Any OS with a graphical display (Windows, macOS, or Linux)
+- A display large enough for the fixed 1000×700 application window (1024×768 or higher recommended)
 
-- Python 3.7+
-- 4 GB RAM
-- 100 MB free disk space
-- Display resolution: 1024x768 or higher
-
-### Recommended Requirements
-
-- Python 3.9+
-- 8 GB RAM
-- Display resolution: 1920x1080 or higher
+The application is a lightweight standard-library script with negligible memory and disk requirements.
 
 ## Educational Applications
 
