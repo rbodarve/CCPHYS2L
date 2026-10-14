@@ -176,8 +176,7 @@ CCPHYS2L/
 ├── electromagnetism.py    # Main application file
 ├── LICENSE.md             # MIT License
 ├── README.md              # This file
-├── .gitignore             # Git ignore rules
-└── .vscode/               # VS Code workspace settings
+└── .gitignore             # Git ignore rules
 ```
 
 ## Dependencies
@@ -212,6 +211,48 @@ This tool is ideal for:
 - **Student Learning**: Interactive exploration of electric fields
 - **Problem Solving**: Verification of analytical calculations
 - **Demonstrations**: Classroom presentations of electrostatics
+
+## Review notes (2026-10-14)
+
+A later code review and simulation run. The program code is unchanged; this section only records the findings.
+
+### Known issues
+
+| # | What happens | How to reproduce | Suggested fix |
+|---|---|---|---|
+| S1 | Load onto an empty plane cannot be undone, and Redo after a load replaces the loaded particles with an old state. Fix checked in a copy. | Add a particle → Undo → Load a file → Redo | `load_configuration` (line 707): always call `save_state()`, which also clears the redo stack |
+| S2 | A bad file leaves a partial or empty plane. Fix checked in a copy. | Load `{"particles": [{"x": 1}]}`, or a file whose second entry has `"charge": "big"` | Lines 709-718: build the new list first, then call `restore_state`; on error keep the old particles |
+| S3 | Values from a file skip charge validation. Fix checked in a copy. | Load a file with charge −1e-9, 0 or 1.0, or `"particle_type": "neutron"` | Line 715: run `validate_charge` and accept only `"proton"` or `"electron"` (`validate_charge` shows its own error dialog, so a bad charge then gives two dialogs; check the range inline to avoid this) |
+| S4 | A huge coordinate crashes the calculation; `nan` input prints `nan` results | Electric field at x = 1e200, or x = nan | Line 811: also catch `OverflowError`; reject non-finite input with `math.isfinite` |
+| S5 | A negative Gaussian radius is accepted | Electric Flux with radius −5 | Line 970: reject `radius <= 0` |
+| S6 | A zero field shows a direction of 0.0° | +1 nC at (−1, 0) and (1, 0), point (0, 0) | Lines 77 and 114: print "undefined" when the magnitude is 0 |
+| S7 | Two particles can be placed on the same spot; Potential Energy then always fails | Click the same pixel twice | Line 432: reject a click on an existing particle |
+| S8 | A neutral system can be reported as charged | +1 nC, +2 nC and −3 nC | Line 1007: use `math.isclose(total_charge, 0, abs_tol=1e-15)` |
+| S9 | Cancelling the first input still shows the next inputs | Cancel X in the Electric Field dialog | Line 858: return after each cancelled input |
+| S10 | Right-click on overlapping particles selects the hidden one | Particles at canvas x = 400 and x = 404 | Line 515: search `reversed(self.particles)` |
+
+### Edge cases
+
+- A neutral system can show a tiny net charge (about 4×10⁻²⁵ C) because of floating-point rounding (S8).
+- For a system with a net charge, the dipole moment depends on the choice of origin; the result only notes the net charge.
+- The test charge in "Force on a Charge" is not validated (0, `nan` and `inf` are accepted).
+- The "Current Particles" box shows 6 rows and has no scrollbar; particle 7 and later are hidden.
+
+### Simplification ideas
+
+- Compute the force as test charge × electric field instead of repeating the field loop (lines 98-117).
+- Let `load_configuration` call `restore_state` instead of repeating it (lines 711-718).
+- Store the signed charge once instead of `particle.charge * particle.sign` in 6 places.
+- Merge `toggle_proton_mode` and `toggle_electron_mode` into one method (lines 344-359).
+- Use `collections.deque(maxlen=50)` for the undo stack instead of `list.pop(0)` (lines 597-599).
+- Use `math.hypot(dx, dy)` instead of `math.sqrt(dx**2 + dy**2)` (6 places).
+
+### Tested
+
+- 846 automated checks.
+- Physics: `PhysicsEngine` with 60 random setups (1-6 particles), compared with an independent Coulomb's-law calculation, plus known cases. Field, potential, force, potential energy, flux and the neutral dipole are correct.
+- Application: the real `ElectrostaticsCalculator` on a hidden window, with the input, message and file dialogs replaced by scripted answers. 30 random add/delete/edit/clear/undo/redo sequences were checked against a model, plus save/load, bad files and input edge cases.
+- Not tested: real mouse clicks and double-click timing, the right-click menu, modal window behavior, real file dialogs, the visual layout and the "Close Program" buttons.
 
 ## License
 
