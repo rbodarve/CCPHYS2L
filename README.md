@@ -81,7 +81,7 @@ python electromagnetism.py
 - **Positive Particles**: Click "Add Positive Particle" → Click on plane → Enter charge
 - **Negative Particles**: Click "Add Negative Particle" → Click on plane → Enter charge
 - **Coordinates**: Based on the visual grid where each square represents one unit (1 meter)
-- **Charge Values**: Enter the magnitude only; the sign is set automatically by particle type. Values are validated to the range 1×10⁻¹² C to 1×10⁻³ C (zero and out-of-range values are rejected)
+- **Charge Values**: Enter the magnitude only; the sign is set automatically by particle type. Values are validated to the range 1×10⁻¹² C to 1×10⁻³ C (zero and out-of-range values are rejected). Charges loaded from a configuration file are not validated: a negative or zero charge, an out-of-range charge, or an unknown particle type is accepted.
 
 ### Editing and Deleting Particles
 
@@ -92,7 +92,7 @@ python electromagnetism.py
 
 - **Save Configuration**: Save your current particle setup to a JSON file for later use
 - **Load Configuration**: Load a previously saved particle configuration
-- **Undo**: Undo the last action (add, delete, edit charge, clear, or load)
+- **Undo**: Undo the last action (add, delete, edit charge, clear, or load). Exception: a load onto an empty plane cannot be undone, and a Redo after such a load replaces the loaded particles with an older state.
 - **Redo**: Redo a previously undone action
 - **Clear All**: Remove all particles from the plane
 
@@ -166,7 +166,7 @@ After each calculation, you have three options:
 
 - Prevents division by zero when a calculation point coincides with a particle, or when two particles occupy the same location
 - Charge input validation with an enforced physical range
-- Graceful handling of calculation and file save/load errors with recovery suggestions
+- Graceful handling of calculation and file save/load errors with recovery suggestions. Exception: a very large coordinate (for example 1e200) raises an uncaught `OverflowError`, and `nan` input gives `nan` results.
 
 ## File Structure
 
@@ -220,12 +220,9 @@ A later code review and simulation run. The program code is unchanged; this sect
 
 | # | What happens | How to reproduce | Suggested fix |
 |---|---|---|---|
-| S1 | Load onto an empty plane cannot be undone, and Redo after a load replaces the loaded particles with an old state. Fix checked in a copy. | Add a particle → Undo → Load a file → Redo | `load_configuration` (line 707): always call `save_state()`, which also clears the redo stack |
 | S2 | A bad file leaves a partial or empty plane. Fix checked in a copy. | Load `{"particles": [{"x": 1}]}`, or a file whose second entry has `"charge": "big"` | Lines 709-718: build the new list first, then call `restore_state`; on error keep the old particles |
-| S3 | Values from a file skip charge validation. Fix checked in a copy. | Load a file with charge −1e-9, 0 or 1.0, or `"particle_type": "neutron"` | Line 715: run `validate_charge` and accept only `"proton"` or `"electron"` (`validate_charge` shows its own error dialog, so a bad charge then gives two dialogs; check the range inline to avoid this) |
-| S4 | A huge coordinate crashes the calculation; `nan` input prints `nan` results | Electric field at x = 1e200, or x = nan | Line 811: also catch `OverflowError`; reject non-finite input with `math.isfinite` |
 | S5 | A negative Gaussian radius is accepted | Electric Flux with radius −5 | Line 970: reject `radius <= 0` |
-| S6 | A zero field shows a direction of 0.0° | +1 nC at (−1, 0) and (1, 0), point (0, 0) | Lines 77 and 114: print "undefined" when the magnitude is 0 |
+| S6 | A zero field shows a direction of 0.0° | +1 nC at (−1, 0) and (1, 0), point (0, 0) | Lines 78 and 115: print "undefined" when the magnitude is 0 |
 | S7 | Two particles can be placed on the same spot; Potential Energy then always fails | Click the same pixel twice | Line 432: reject a click on an existing particle |
 | S8 | A neutral system can be reported as charged | +1 nC, +2 nC and −3 nC | Line 1007: use `math.isclose(total_charge, 0, abs_tol=1e-15)` |
 | S9 | Cancelling the first input still shows the next inputs | Cancel X in the Electric Field dialog | Line 858: return after each cancelled input |
@@ -242,10 +239,10 @@ A later code review and simulation run. The program code is unchanged; this sect
 
 - Compute the force as test charge × electric field instead of repeating the field loop (lines 98-117).
 - Let `load_configuration` call `restore_state` instead of repeating it (lines 711-718).
-- Store the signed charge once instead of `particle.charge * particle.sign` in 6 places.
+- Store the signed charge once instead of `particle.charge * particle.sign` in 7 places.
 - Merge `toggle_proton_mode` and `toggle_electron_mode` into one method (lines 344-359).
 - Use `collections.deque(maxlen=50)` for the undo stack instead of `list.pop(0)` (lines 597-599).
-- Use `math.hypot(dx, dy)` instead of `math.sqrt(dx**2 + dy**2)` (6 places).
+- Use `math.hypot(dx, dy)` instead of `math.sqrt(dx**2 + dy**2)` (5 places).
 
 ### Tested
 
